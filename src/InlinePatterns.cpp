@@ -48,7 +48,7 @@ const QString LINK_RE = NOIMG + BRK + "\\(\\s*(<.*?>|((?:(?:\\(.*?\\))|[^\\(\\)]
 
 const QString IMAGE_LINK_RE = "\\!" + BRK + "\\s*\\((<.*?>|([^\\)]*))\\)";
 //!< ![alttxt](http://x.com/) or ![alttxt](<http://x.com/>)
-const QString REFERENCE_RE = NOIMG + BRK+ "\\s?\\[([^\\]]*)\\]";           //!< [Google][3]
+const QString REFERENCE_RE = NOIMG + BRK + "\\s?\\[([^\\]]*)\\]";           //!< [Google][3]
 const QString SHORT_REF_RE = NOIMG + "\\[([^\\]]+)\\]";                    //!< [Google]
 const QString IMAGE_REFERENCE_RE = "\\!" + BRK + "\\s?\\[([^\\]]*)\\]";   //!< ![alt text][2]
 const QString NOT_STRONG_RE = "((^| )(\\*|_)( |$))";                       //!< stand-alone * or _
@@ -69,12 +69,26 @@ QString dequote(const QString &string)
     }
 }
 
+QString itertext(const Element &elem)
+{
+    QString tag = elem->tag;
+    if ( tag.isEmpty() ) {
+        return QString();
+    }
+    QString result = elem->text;
+    for ( int i = 0; i < elem->size(); ++i ) {
+        result += itertext((*elem)[i]);
+        result += (*elem)[i]->tail;
+    }
+    return result;
+}
+
 const QRegularExpression ATTR_RE("\\{@([^\\}]*)=([^\\}]*)\\}");
 
 QString handleAttributes(const QString &text, Element &parent)
 {
     return pypp::re::sub(ATTR_RE, [&](const QRegularExpressionMatch &m) -> QString {
-        parent.setAttribute(m.captured(1), m.captured(2).replace("\n",  " "));
+        parent->set(m.captured(1), m.captured(2).replace("\n",  " "));
         return m.captured();
     }, text);
 }
@@ -82,7 +96,7 @@ QString handleAttributes(const QString &text, Element &parent)
 //! Set values of an element based on attribute definitions ({@id=123}).
 
 Pattern::Pattern(const QString &pattern, const std::weak_ptr<Markdown> &markdown_instance) :
-    pattern(pattern), compiled_re(QString("^(.*?)%1(.*?)$").arg(pattern), QRegularExpression::DotMatchesEverythingOption | QRegularExpression::UseUnicodePropertiesOption),
+    pattern(pattern), compiled_re(QString("^(.*?)%1(.*)$").arg(pattern), QRegularExpression::DotMatchesEverythingOption | QRegularExpression::UseUnicodePropertiesOption),
     //! Api for Markdown to pass safe_mode into instance
     safe_mode(false), markdown(markdown_instance)
 {}
@@ -106,7 +120,7 @@ QString Pattern::unescape(const QString &text)
             if ( str ) {
                 return *str;
             }
-            return (*node).getTextContent();
+            return itertext(*node);
         }
         return QString();
     };
@@ -155,7 +169,7 @@ public:
         }
         QChar ch = text.at(0);
         if ( this->markdown.lock()->ESCAPED_CHARS.contains(ch) ) {
-            return QString("%1%2%3").arg(util::STX).arg(text.at(0).unicode()).arg(util::ETX);
+            return QString("%1%2%3").arg(util::STX).arg(ch.unicode()).arg(util::ETX);
         } else {
             return QString("\\%1").arg(text);
         }
@@ -180,10 +194,10 @@ public:
     virtual ~SimpleTagPattern()
     {}
 
-    virtual Element handleMatch(const ElementTree &doc, const QRegularExpressionMatch &m)
+    virtual Element handleMatch(const ElementTree &, const QRegularExpressionMatch &m)
     {
-        Element el(doc, this->tag);
-        el.setText(m.captured(3));
+        Element el = createElement(this->tag);
+        el->text = m.captured(3);
         return el;
     }
 
@@ -205,9 +219,9 @@ public:
         SimpleTagPattern(pattern, tag, md)
     {}
 
-    Element handleMatch(const ElementTree& doc, const QRegularExpressionMatch &)
+    Element handleMatch(const ElementTree &, const QRegularExpressionMatch &)
     {
-        return Element(doc, this->tag);
+        return createElement(this->tag);
     }
 
     QString type(void) const
@@ -226,10 +240,11 @@ public:
         tag("code")
     {}
 
-    virtual Element handleMatch(const ElementTree &doc, const QRegularExpressionMatch &m)
+    virtual Element handleMatch(const ElementTree &, const QRegularExpressionMatch &m)
     {
-        Element el(doc, this->tag);
-        el.setText(m.captured(3).trimmed());
+        Element el = createElement(this->tag);
+        el->text = m.captured(3).trimmed();
+        el->atomic = true;
         return el;
     }
 
@@ -254,13 +269,12 @@ public:
         SimpleTagPattern(pattern, tag, md)
     {}
 
-    Element handleMatch(const ElementTree& doc, const QRegularExpressionMatch& m)
+    Element handleMatch(const ElementTree &, const QRegularExpressionMatch &m)
     {
         QStringList tags = this->tag.split(",");
-        Element el1(doc, tags.at(0));
-        Element el2(doc, tags.at(1));
-        el2.setText(m.captured(3));
-        el1.append(el2);
+        Element el1 = createElement(tags.at(0));
+        Element el2 = createSubElement(el1, tags.at(1));
+        el2->text = m.captured(3);
         return el1;
     }
 
@@ -324,10 +338,10 @@ public:
     virtual ~LinkPattern(void)
     {}
 
-    virtual Element handleMatch(const ElementTree &doc, const QRegularExpressionMatch &m)
+    virtual Element handleMatch(const ElementTree &, const QRegularExpressionMatch &m)
     {
-        Element el(doc, "a");
-        el.setText(m.captured(2));
+        Element el = createElement("a");
+        el->text = m.captured(2);
         QString title = m.captured(13);
         QString href  = m.captured(9);
 
@@ -335,14 +349,14 @@ public:
             if ( href.startsWith('<') ) {
                 href = href.mid(1, href.size()-2);
             }
-            el.setAttribute("href", this->sanitize_url(this->unescape(href.trimmed())));
+            el->set("href", this->sanitize_url(this->unescape(href.trimmed())));
         } else {
-            el.setAttribute("href", QString());
+            el->set("href", QString());
         }
 
         if ( ! title.isEmpty() ) {
             title = dequote(this->unescape(title));
-            el.setAttribute("title", title);
+            el->set("title", title);
         }
 
         return el;
@@ -440,11 +454,11 @@ public:
         LinkPattern(pattern, md)
     {}
 
-    Element handleMatch(const ElementTree &doc, const QRegularExpressionMatch &m)
+    Element handleMatch(const ElementTree &, const QRegularExpressionMatch &m)
     {
         std::shared_ptr<Markdown> markdown = this->markdown.lock();
 
-        Element el(doc, "img");
+        Element el = createElement("img");
         QString src_parts_source = m.captured(9);
         QStringList src_parts = src_parts_source.split(" ");
         if ( ! src_parts.isEmpty() ) {
@@ -452,13 +466,13 @@ public:
             if ( src.startsWith('<') && src.endsWith('>') ) {
                 src = src.mid(1, src.size()-2);
             }
-            el.setAttribute("src", src);
+            el->set("src", src);
         } else {
-            el.setAttribute("src", QString());
+            el->set("src", QString());
         }
         if ( src_parts.size() > 1 ) {
             src_parts.erase(src_parts.begin());
-            el.setAttribute("title", dequote(this->unescape(src_parts.join(" "))));
+            el->set("title", dequote(this->unescape(src_parts.join(" "))));
         }
 
         QString truealt;
@@ -468,7 +482,7 @@ public:
             truealt = m.captured(2);
         }
 
-        el.setAttribute("alt", this->unescape(truealt));
+        el->set("alt", this->unescape(truealt));
         return el;
     }
 
@@ -492,7 +506,7 @@ public:
         std::shared_ptr<Markdown> markdown = this->markdown.lock();
 
         QString id;
-        if ( m.capturedTexts().size() > 8 ) {
+        if ( m.capturedTexts().size() > 8 && ! m.captured(9).isEmpty() ) {
             id = m.captured(9);
         } else {
             //! if we got something like "[Google][]" or "[Goggle]"
@@ -504,7 +518,7 @@ public:
         //! Clean up linebreaks in id
         id = id.replace(this->NEWLINE_CLEANUP_RE, " ");
         if ( ! markdown->references.contains(id) ) {
-            return Element::InvalidElement;
+            return Element();
         }
         Markdown::ReferenceItem item = markdown->references[id];
 
@@ -512,16 +526,16 @@ public:
         return this->makeTag(doc, item.first, item.second, text);
     }
 
-    virtual Element makeTag(const ElementTree &doc, const QString &href, const QString &title, const QString &text)
+    virtual Element makeTag(const ElementTree &, const QString &href, const QString &title, const QString &text)
     {
-        Element el(doc, "a");
+        Element el = createElement("a");
 
-        el.setAttribute("href", this->sanitize_url(href));
+        el->set("href", this->sanitize_url(href));
         if ( ! title.isEmpty() ) {
-            el.setAttribute("title", title);
+            el->set("title", title);
         }
 
-        el.setText(text);
+        el->text = text;
         return el;
     }
 
@@ -543,13 +557,13 @@ public:
         ReferencePattern(pattern, md)
     {}
 
-    Element makeTag(const ElementTree &doc, const QString &href, const QString &title, const QString &text)
+    Element makeTag(const ElementTree &, const QString &href, const QString &title, const QString &text)
     {
-        Element el(doc, "img");
+        Element el = createElement("img");
 
-        el.setAttribute("src", this->sanitize_url(href));
+        el->set("src", this->sanitize_url(href));
         if ( ! title.isEmpty() ) {
-            el.setAttribute("title", title);
+            el->set("title", title);
         }
 
         QString text_ = text;
@@ -557,7 +571,7 @@ public:
             text_ = handleAttributes(text, el);
         }
 
-        el.setAttribute("alt", this->unescape(text_));
+        el->set("alt", this->unescape(text_));
         return el;
     }
 
@@ -576,11 +590,12 @@ public:
         Pattern(pattern, md)
     {}
 
-    Element handleMatch(const ElementTree &doc, const QRegularExpressionMatch &m)
+    Element handleMatch(const ElementTree &, const QRegularExpressionMatch &m)
     {
-        Element el(doc, "a");
-        el.setAttribute("href", this->unescape(m.captured(2)));
-        el.setText(m.captured(2));
+        Element el = createElement("a");
+        el->set("href", this->unescape(m.captured(2)));
+        el->text = m.captured(2);
+        el->atomic = true;
         return el;
     }
 
@@ -599,9 +614,9 @@ public:
         Pattern(pattern, md)
     {}
 
-    Element handleMatch(const ElementTree &doc, const QRegularExpressionMatch &m)
+    Element handleMatch(const ElementTree &, const QRegularExpressionMatch &m)
     {
-        Element el(doc, "a");
+        Element el = createElement("a");
         QString email = this->unescape(m.captured(2));
         if ( email.startsWith("mailto:") ) {
             email = email.mid(7);
@@ -622,8 +637,9 @@ public:
         }
         mailto = buff;
 
-        el.setAttribute("href", this->unescape(mailto));
-        el.setText(letters);
+        el->set("href", this->unescape(mailto));
+        el->text = letters;
+        el->atomic = true;
         return el;
     }
 

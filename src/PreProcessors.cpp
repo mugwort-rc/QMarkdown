@@ -46,7 +46,7 @@ public:
         source = source.replace("\r\n", "\n");
         source = source.replace("\r", "\n");
         source += "\n\n";
-        source = source.replace("\t", QString(markdown->tab_length(), ' '));
+        source = pypp::expandtabs(source, markdown->tab_length());
         source = source.replace(QRegularExpression("(?<=\n) +\n"), "\n");
         return source.split("\n");
 	}
@@ -112,7 +112,7 @@ public:
 
 			if ( ! in_tag ) {
                 if ( block[0] == '<' && block.trimmed().size() > 1 ) {
-                    if ( block[1] == '!' ) {
+                    if ( block.mid(1, 3) == "!--" ) {
 						//! is a comment block
                         left_tag   = "--";
 						left_index = 2;
@@ -203,7 +203,7 @@ public:
                     items = QStringList();
 				}
 			}
-		}
+        }
 		if ( items.size() > 0 ) {
             if ( this->markdown_in_raw && attrs.contains("markdown") ) {
                 QString start = items.front().left(left_index).replace(QRegularExpression("\\smarkdown(=['\"]?[^> ]*['\"]?)?"), QString());
@@ -218,8 +218,7 @@ public:
                 new_blocks.push_back(markdown->htmlStash.store(end));
 			} else {
                 new_blocks.push_back(items.join("\n\n"));
-			}
-			//new_blocks.push_back(this->markdown->htmlStash.store(boost::algorithm::join(items, L"\n\n")));
+            }
             new_blocks.push_back("\n");
 		}
         QString new_text = new_blocks.join("\n\n");
@@ -378,7 +377,7 @@ public:
                     if ( tm.hasMatch() ) {
 						buffer.pop_front();
 						for ( int i = 2; i <= 4; ++i ) {
-                            t = m.captured(i);
+                            t = tm.captured(i);
 							if ( t.size() > 0 ) {
 								break;
 							}

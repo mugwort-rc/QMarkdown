@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include "ElementTree.h"
+#include "ElementTree.hpp"
 
 class TestEtree : public QObject
 {

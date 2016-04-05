@@ -10,7 +10,7 @@
 
 #include <boost/optional.hpp>
 
-#include "ElementTree.h"
+#include "ElementTree.hpp"
 #include "odict.hpp"
 
 namespace markdown{
@@ -98,7 +98,7 @@ public:
     virtual boost::optional<QString> handleMatch(const QRegularExpressionMatch &)
     { return boost::none; }
     virtual Element handleMatch(const ElementTree &, const QRegularExpressionMatch &)
-    { return Element::InvalidElement; }
+    { return Element(); }
 
     /*!
      * Return class name, to define pattern type

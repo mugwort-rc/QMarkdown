@@ -6,6 +6,7 @@
 #include "test_pypp.h"
 #include "test_etree.h"
 #include "test_apis.h"
+#include "test_basic.h"
 
 int main(int argc, char *argv[]) {
     XercesInitializer xerces;
@@ -23,6 +24,9 @@ int main(int argc, char *argv[]) {
         Test(new TestBlockParserState()),
         Test(new TestHtmlStash()),
         Test(new TestOrderedDict()),
+        Test(new TestInlinePattern()),
+        Test(new TestTreeProcessor()),
+        Test(new TestBasic()),
     };
 
     for ( QSharedPointer<QObject> &test : tests ) {

@@ -10,6 +10,7 @@
 #include <utility>
 
 #include <QDebug>
+#include "Serializers.h"
 
 #include "Markdown.h"
 
@@ -33,8 +34,7 @@ public:
         placeholder_prefix(util::INLINE_PLACEHOLDER_PREFIX),
         placeholder_suffix(util::ETX),
         placeholder_length(4 + this->placeholder_prefix.size() + this->placeholder_suffix.size()),
-        placeholder_re(util::INLINE_PLACEHOLDER_RE),
-        class_root(ElementTree::InvalidElementTree)
+        placeholder_re(util::INLINE_PLACEHOLDER_RE)
     {}
 
     ~InlineProcessor(void)
@@ -140,41 +140,28 @@ private:
     {
         QString text;
         if ( isText ) {
-            if ( subnode.hasText() ) {
-                text = subnode.text();
-                subnode.removeText();
+            if ( subnode->hasText() ) {
+                text = subnode->text;
+                subnode->text.clear();
             }
         } else {
-            if ( subnode.hasTail() ) {
-                text = subnode.tail();
-                subnode.removeTail();
+            if ( subnode->hasTail() ) {
+                text = subnode->tail;
+                subnode->tail.clear();
             }
         }
 
-        Element::List childResult = this->processPlaceholders(text, subnode);
+        ElementList_t childResult = this->processPlaceholders(text, subnode, isText);
 
-        Element pos = Element::InvalidElement;
+        int pos = 0;
         if ( ! isText && node != subnode ) {
-            pos = subnode.getNextElementSibling();
-            if ( subnode.hasTail() ) {
-                subnode.removeTail();
-            }
-            node.remove(subnode);
+            pos = node->child().indexOf(subnode) + 1;
         } else {
-            pos = node.getFirstElementChild();
+            pos = 0;
         }
 
         for ( Element &newChild : childResult ) {
-            if ( ! pos.isNull() ) {
-                node.insertBefore(newChild, pos);
-                pos = newChild;
-            } else {
-                if ( node.child().size() > 0 ) {
-                    node.insertBefore(newChild, node.getFirstElementChild());
-                } else {
-                    node.append(newChild);
-                }
-            }
+            node->insert(pos++, newChild);
         }
     }
 
@@ -189,25 +176,33 @@ private:
      * Returns: list with ElementTree elements with applied inline patterns.
      *
      */
-    Element::List processPlaceholders(const QString &data, Element &parent)
+    ElementList_t processPlaceholders(const QString &data, Element &parent, bool isText=true)
     {
-        Element::List result;
-        auto linkText = [&](const QString &text){
+        ElementList_t result;
+        auto linkText = [&](const QString &text, bool atomic=false){
             if ( ! text.isEmpty() ) {
                 if ( ! result.isEmpty() ) {
                     Element target = result.back();
-                    if ( target.hasTail() ) {
-                        target.setTail(target.tail()+text);
+                    if ( target->hasTail() ) {
+                        target->tail = target->tail+text;
                     } else {
-                        target.setTail(text);
+                        target->tail = text;
                         result.pop_back();
                         result.push_back(target);
                     }
-                } else {
-                    if ( parent.hasText() ) {
-                        parent.setText(parent.text()+text);
+                } else if ( ! isText ) {
+                    if ( parent->hasTail() ) {
+                        parent->tail = parent->tail + text;
                     } else {
-                        parent.setText(text);
+                        parent->tail = text;
+                    }
+                } else {
+                    if ( parent->hasText() ) {
+                        parent->text = parent->text+text;
+                        parent->atomic = atomic;
+                    } else {
+                        parent->text = text;
+                        parent->atomic = atomic;
                     }
                 }
             }
@@ -231,19 +226,19 @@ private:
 
                     if ( ! str ) {
                         //! it's Element
-                        Element::List nodes = {*nodeptr};
-                        for ( Element &e : (*nodeptr).child() ) {
+                        ElementList_t nodes = {*nodeptr};
+                        for ( Element &e : (*nodeptr)->child() ) {
                             nodes.push_back(e);
                         }
                         for ( Element &child : nodes ) {
-                            if ( child.hasTail() ) {
-                                if ( ! child.tail().trimmed().isEmpty() ) {
+                            if ( child->hasTail() ) {
+                                if ( ! child->tail.trimmed().isEmpty() ) {
                                     Element new_node = *nodeptr;
                                     this->processElementText(new_node, child, false);
                                 }
                             }
-                            if ( child.hasText() ) {
-                                if ( ! child.text().trimmed().isEmpty() ) {
+                            if ( child->hasText() ) {
+                                if ( ! child->text.trimmed().isEmpty() ) {
                                     this->processElementText(child, child);
                                 }
                             }
@@ -266,7 +261,7 @@ private:
                 }
             } else {
                 QString text = data_.mid(startIndex);
-                linkText(text);
+                linkText(text, isText);
                 data_ = QString();
             }
         }
@@ -299,24 +294,28 @@ private:
         boost::optional<QString> result = pattern->handleMatch(match);  //!< first handleMatch (case String)
         QString placeholder;
         if ( ! result ) {
-            Element node = pattern->handleMatch(this->class_root, match);     //!< second handleMatch (case Node)
-            if ( node.isNull() ) {
+            Element node = pattern->handleMatch(ElementTree(), match);     //!< second handleMatch (case Node)
+            if ( ! node ) {
                 return std::make_tuple(data, true, leftData.size()+match.capturedStart(match.lastCapturedIndex()));
             }
-            if ( node.child().size() == 0 || node.hasText() ) {
-                //! We need to process current node too
-                Element::List nodes = {node};
-                nodes.append(node.child());
-                for ( Element &child : nodes ) {
-                    if ( child.hasText() ) {
-                        QString text = child.text();
-                        text = this->handleInline(text, patternIndex+1);
-                        child.setText(text);
-                    }
-                    if ( child.hasTail() ) {
-                        QString tail = child.tail();
-                        tail = this->handleInline(tail, patternIndex);
-                        child.setTail(tail);
+            if ( ! node->atomic ) {
+                if ( node->size() == 0 || node->hasText() ) {
+                    //! We need to process current node too
+                    ElementList_t nodes = {node};
+                    nodes.append(node->child());
+                    for ( Element &child : nodes ) {
+                        if ( child->hasText() ) {
+                            QString text = child->text;
+                            if ( ! child->atomic ) {
+                                text = this->handleInline(text, patternIndex+1);
+                            }
+                            child->text = text;
+                        }
+                        if ( child->hasTail() ) {
+                            QString tail = child->tail;
+                            tail = this->handleInline(tail, patternIndex);
+                            child->tail = tail;
+                        }
                     }
                 }
             }
@@ -352,78 +351,66 @@ private:
 
         this->stashed_nodes = StashNodes();
 
-        this->class_root = ElementTree();
-
         try{
-            Element::List stack = {tree};
+            ElementList_t stack = {tree};
             while ( ! stack.isEmpty() ) {
                 Element currElement = stack.back();
                 stack.pop_back();
-                typedef QPair<Element, Element::List> QueueItem;
+                typedef QPair<Element, ElementList_t> QueueItem;
                 typedef QList<QueueItem> Queue;
                 Queue insertQueue;
-                for ( Element &child : currElement.child() ) {
-                    if ( child.hasText() ) {
-                        QString text = child.text();
-                        child.removeText();
-                        Element::List lst = this->processPlaceholders(this->handleInline(text), child);
+                for ( Element &child : currElement->child() ) {
+                    if ( child->hasText() && ! child->atomic ) {
+                        QString text = child->text;
+                        child->text.clear();
+                        ElementList_t lst = this->processPlaceholders(this->handleInline(text), child);
                         stack.append(lst);
                         insertQueue.push_back(qMakePair(child, lst));
                     }
-                    if ( child.hasTail() ) {
-                        QString tail = this->handleInline(child.tail());
-                        Element dumby_root(this->class_root, "d_root");
-                        Element dumby(dumby_root, "d");
-                        dumby_root.append(dumby);
-                        Element::List tailResult = this->processPlaceholders(tail, dumby);
-                        if ( dumby.hasTail() ) {
-                            child.setTail(dumby.tail());
+                    if ( child->hasTail() ) {
+                        QString tail = this->handleInline(child->tail);
+                        Element dumby = createElement("d");
+                        ElementList_t tailResult = this->processPlaceholders(tail, dumby, false);
+                        if ( dumby->hasTail() ) {
+                            child->tail = dumby->tail;
                         } else {
-                            child.removeTail();
+                            child->tail.clear();
                         }
-                        Element target = child.getNextElementSibling();
+                        int pos = currElement->child().indexOf(child) + 1;
                         for ( Element elem : pypp::reversed(tailResult) ) {
-                            if ( ! target.isNull() ) {
-                                currElement.insertBefore(elem, target);
-                            } else {
-                                currElement.append(elem);
-                            }
+                            currElement->insert(pos, elem);
                         }
                     }
-                    if ( child.child().size() > 0 ) {
+                    if ( child->size() > 0 ) {
                         stack.push_back(child);
                     }
                 }
                 for ( const QueueItem &item : insertQueue ) {
                     Element element = item.first;
-                    Element::List lst = item.second;
+                    ElementList_t lst = item.second;
                     if ( markdown->enable_attributes() ) {
-                        if ( element.hasText() ) {
-                            QString text = element.text();
+                        if ( element->hasText() ) {
+                            QString text = element->text;
                             text = handleAttributes(text, element);
-                            element.setText(text);
+                            element->text = text;
                         }
                     }
-                    Element ref = ( element.child().size() > 0 ) ? element.getFirstElementChild() : Element::InvalidElement;
+                    int i = 0;
                     for ( Element &newChild : lst ) {
                         if ( markdown->enable_attributes() ) {
                             //! Processing attributes
-                            if ( newChild.hasTail() ) {
-                                QString text = newChild.tail();
+                            if ( newChild->hasTail() ) {
+                                QString text = newChild->tail;
                                 text = handleAttributes(text, element);
-                                newChild.setTail(text);
+                                newChild->tail = text;
                             }
-                            if ( newChild.hasText() ) {
-                                QString text = newChild.text();
+                            if ( newChild->hasText() ) {
+                                QString text = newChild->text;
                                 text = handleAttributes(text, element);
-                                newChild.setText(text);
+                                newChild->text = text;
                             }
                         }
-                        if ( ! ref.isNull() ) {
-                            element.insertBefore(newChild, ref);
-                        } else {
-                            element.append(newChild);
-                        }
+                        element->insert(i++, newChild);
                     }
                 }
             }
@@ -431,8 +418,7 @@ private:
         } catch (...) {
             qWarning() << "TreeProcessor::run() exception.";
         }
-        this->class_root = ElementTree::InvalidElementTree;
-        return Element::InvalidElement;
+        return Element();
     }
 
 private:
@@ -440,8 +426,6 @@ private:
     QString placeholder_suffix;
     unsigned int placeholder_length;
     QRegularExpression placeholder_re;
-
-    ElementTree class_root;
 
 };
 
@@ -459,22 +443,22 @@ private:
      */
     void prettifyETree(Element &elem)
     {
-        if ( util::isBlockLevel(elem.getTagName()) && elem.getTagName() != "code" && elem.getTagName() != "pre" ) {
-            if ( ( ! elem.hasText() || elem.text().trimmed().isEmpty() )
-                 && elem.child().size() > 0 && util::isBlockLevel(elem.child().front().getTagName()) ) {
-                elem.setText("\n");
+        if ( util::isBlockLevel(elem->tag) && elem->tag != "code" && elem->tag != "pre" ) {
+            if ( ( ! elem->hasText() || elem->text.trimmed().isEmpty() )
+                 && elem->size() > 0 && util::isBlockLevel(elem->child().front()->tag) ) {
+                elem->text = "\n";
             }
-            for ( Element &e : elem.child() ) {
-                if ( util::isBlockLevel(e.getTagName()) ) {
+            for ( Element &e : elem->child() ) {
+                if ( util::isBlockLevel(e->tag) ) {
                     this->prettifyETree(e);
                 }
             }
-            if ( ! elem.hasTail() || elem.tail().trimmed().isEmpty() ) {
-                elem.setTail("\n");
+            if ( ! elem->hasTail() || elem->tail.trimmed().isEmpty() ) {
+                elem->tail = "\n";
             }
         }
-        if ( ! elem.hasTail() || elem.tail().trimmed().isEmpty() ) {
-            elem.setTail("\n");
+        if ( ! elem->hasTail() || elem->tail.trimmed().isEmpty() ) {
+            elem->tail = "\n";
         }
     }
 
@@ -487,20 +471,21 @@ public:
         this->prettifyETree(root);
         //! Do <br />'s seperately as they are often in the middle of
         //! inline content and missed by _prettifyETree.
-        for ( Element &br : root.getElementsByTagName("br") ) {
-            if ( ! br.hasTail() || br.tail().trimmed().isEmpty() ) {
-                br.setTail("\n");
+        for ( Element &br : root->iter("br") ) {
+            if ( ! br->hasTail() || br->tail.trimmed().isEmpty() ) {
+                br->tail = "\n";
             } else {
-                br.setTail("\n"+br.tail());
+                br->tail = "\n"+br->tail;
             }
         }
         //! Clean up extra empty lines at end of code blocks.
-        for ( Element &pre : root.getElementsByTagName("pre") ) {
-            if ( pre.child().size() > 0 && pre.child().front().getTagName() == "code" ) {
-                pre.child().front().setText(pypp::rstrip((pre.child().front().text())+"\n"));
+        for ( Element &pre : root->iter("pre") ) {
+            if ( pre->size() > 0 && pre->child().front()->tag == "code" ) {
+                pre->child().front()->text = pypp::rstrip(pre->child().front()->text)+"\n";
+                pre->child().front()->atomic = true;
             }
         }
-        return Element::InvalidElement;
+        return Element();
     }
 
 };

@@ -74,13 +74,10 @@ public:
             }
         }
         //! Build table
-        Element table(parent, "table");
-        parent.append(table);
-        Element thead(table, "thead");
-        table.append(thead);
+        Element table = createSubElement(parent, "table");
+        Element thead = createSubElement(table, "thead");
         this->build_row(header, thead, align, border);
-        Element tbody(table, "tbody");
-        table.append(tbody);
+        Element tbody = createSubElement(table, "tbody");
         for ( const QString &row : rows ) {
             this->build_row(row.trimmed(), tbody, align, border);
         }
@@ -92,10 +89,9 @@ private:
      */
     void build_row(const QString &row, Element &parent, const QList<boost::optional<QString>> &align, bool border)
     {
-        Element tr(parent, "tr");
-        parent.append(tr);
+        Element tr = createSubElement(parent, "tr");
         QString tag = "td";
-        if ( parent.getTagName() == "thead" ) {
+        if ( parent->tag == "thead" ) {
             tag = "th";
         }
         QStringList cells = this->split_row(row, border);
@@ -103,16 +99,15 @@ private:
         //! contains the same number of columns.
         int i = 0;
         for ( boost::optional<QString> a : align ) {
-            Element c(tr, tag);
-            tr.append(c);
+            Element c = createSubElement(tr, tag);
             if ( cells.size() > i ) {
                 QString cell = cells.at(i).trimmed();
-                c.setText(cell);
+                c->text = cell;
             } else {
-                c.setText(QString());
+                c->text = QString();
             }
             if ( a ) {
-                c.setAttribute("align", *a);
+                c->set("align", *a);
             }
             ++i;
         }

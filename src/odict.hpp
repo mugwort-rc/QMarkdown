@@ -52,14 +52,21 @@ public:
     /*!
      * Returns the value of the item at the given zero-based index.
      */
-    const ValueType &at(int i) const
+    ValueType &at(int i)
     {
         if ( i < 0 ) {
             i = this->_dict.size() + i;
         }
         return this->_dict[this->_keyOrder.at(i)];
     }
-    const ValueType &operator [](int i) const
+    const ValueType at(int i) const
+    {
+        if ( i < 0 ) {
+            i = this->_dict.size() + i;
+        }
+        return this->_dict[this->_keyOrder.at(i)];
+    }
+    const ValueType operator [](int i) const
     {
         if ( i < 0 ) {
             i = this->_dict.size() + i;

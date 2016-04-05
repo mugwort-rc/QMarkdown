@@ -13,15 +13,15 @@ namespace markdown{
 
 BlockParser::BlockParser(const std::weak_ptr<Markdown> &markdown) :
 	markdown(markdown),
-    blockprocessors(), root(ElementTree::InvalidElementTree)
+    blockprocessors(), root()
 {}
 
 ElementTree BlockParser::parseDocument(const QStringList &lines)
 {
     std::shared_ptr<Markdown> markdown = this->markdown.lock();
 
-    this->root = ElementTree(markdown->doc_tag());
-    Element tmp(this->root);
+    this->root = ElementTree(createElement(markdown->doc_tag()));
+    Element tmp = this->root.getroot();
     this->parseChunk(tmp, lines.join("\n"));
 	return this->root;
 }

@@ -112,14 +112,13 @@ void serialize_html(const std::function<void(const QString &)> &write, const Ele
         xercesc::DOMProcessingInstruction* pi = reinterpret_cast<xercesc::DOMProcessingInstruction*>(elem);
         write((boost::wformat(L"<?%s %s?>")%escape_cdata(wconvert(pi->getTarget()))%escape_cdata(wconvert(pi->getData()))).str());
     } else */{
-        QString tag = elem.getTagName();
+        QString tag = elem->tag;
         write("<"+tag);
-        Element::Attributes attrs = elem.getAttributes();
-        if ( attrs.size() > 0 ) {
-            QStringList attrKeys = attrs.keys();
-            qSort(attrKeys);  //!< lexical order
-            for ( const QString &key : attrKeys ) {
-                const QString value = escape_attrib_html(attrs[key]);
+        QStringList keys = elem->keys();
+        if ( keys.size() > 0 ) {
+            qSort(keys);  //!< lexical order
+            for ( const QString &key : keys ) {
+                const QString value = escape_attrib_html(elem->get(key));
                 if ( format == html && qnames.contains(key) && qnames[key] == value ) {
                     //! handle boolean attributes
                     write(QString(" %1").arg(value));
@@ -146,27 +145,27 @@ void serialize_html(const std::function<void(const QString &)> &write, const Ele
             }
         }
         if ( format == xhtml && HTML_EMPTY.contains(tag) ) {
-            write("/>");
+            write(" />");
         } else {
             write(">");
             tag = tag.toLower();
-            if ( elem.hasText() ) {
+            if ( elem->hasText() ) {
                 if ( tag == "script" || tag == "style" ) {
-                    write(elem.text());
+                    write(elem->text);
                 } else {
-                    write(escape_cdata(elem.text()));
+                    write(escape_cdata(elem->text));
                 }
             }
-            for ( Element &child : elem.child() ) {
-                serialize_html(write, child, qnames, NamespaceMap(), format);
+            for ( int i = 0; i < elem->size(); ++i ) {
+                serialize_html(write, (*elem)[i], qnames, NamespaceMap(), format);
             }
             if ( ! HTML_EMPTY.contains(tag) ) {
                 write(QString("</%1>").arg(tag));
             }
         }
     }
-    if ( elem.hasTail() ) {
-        write(escape_cdata(elem.tail()));
+    if ( elem->hasTail() ) {
+        write(escape_cdata(elem->tail));
     }
 }
 
@@ -211,32 +210,18 @@ std::tuple<NamespaceMap, NamespaceMap> namespaces(const Element &elem, const QSt
     };
 
     //! populate qname and namespaces table
-    QList<Element> iterNodes;
-    std::function<void(const Element &)> iter = [&](const Element &it){
-        if ( it.child().size() > 0 ) {
-            for ( const Element &node : it.child() ) {
-                iterNodes.push_back(node);
-                iter(node);
-            }
+    for ( Element &node : elem->iter() ) {
+        QString nsURI = QString(); // node.getNamespaceURI();
+        QString tag   = node->tag;
+        if ( ! nsURI.isEmpty() ) {
+            tag = QString("{%1}%2").arg(nsURI).arg(tag);
         }
-    };
-    iter(elem);
-
-    if ( ! iterNodes.isEmpty() ) {
-        for ( Element &node : iterNodes ) {
-            QString nsURI = node.getNamespaceURI();
-            QString tag   = node.getTagName();
-            if ( ! nsURI.isEmpty() ) {
-                tag = QString("{%1}%2").arg(nsURI).arg(tag);
-            }
-            if ( qnames.contains(tag) ) {
-                add_qname(tag);
-            }
-            Element::Attributes attrs = node.getAttributes();
-            for ( const QString &key : attrs.keys() ) {
-                if ( ! qnames.contains(key) ) {
-                    add_qname(key);
-                }
+        if ( qnames.contains(tag) ) {
+            add_qname(tag);
+        }
+        for ( const QString &key : node->keys() ) {
+            if ( ! qnames.contains(key) ) {
+                add_qname(key);
             }
         }
     }
@@ -245,7 +230,7 @@ std::tuple<NamespaceMap, NamespaceMap> namespaces(const Element &elem, const QSt
 
 QString write_html(const Element &root, const Format &format)
 {
-    if ( root.isNull() ) {
+    if ( ! root ) {
         return QString();
     }
     QStringList data;

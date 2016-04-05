@@ -19,6 +19,10 @@ private slots:
     void init();
     void cleanup();
 
+    void test_slice_end();
+    void test_slice_begin_end();
+    void test_begin_slice();
+    void test_str_expandtabs();
     void test_re_sub();
 
 };

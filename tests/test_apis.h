@@ -153,5 +153,49 @@ private:
 
 };
 
+
+class TestInlinePattern : public QObject
+{
+    Q_OBJECT
+public:
+    TestInlinePattern();
+    ~TestInlinePattern();
+
+private slots:
+    void initTestCase();
+    void cleanupTestCase();
+
+    void init();
+    void cleanup();
+
+    void test_backtick();
+
+private:
+    std::shared_ptr<markdown::Markdown> md;
+
+};
+
+
+class TestTreeProcessor : public QObject
+{
+    Q_OBJECT
+public:
+    TestTreeProcessor();
+    ~TestTreeProcessor();
+
+private slots:
+    void initTestCase();
+    void cleanupTestCase();
+
+    void init();
+    void cleanup();
+
+    void test_inline();
+
+private:
+    std::shared_ptr<markdown::Markdown> md;
+
+};
+
 #endif // TEST_APIS_H_
 

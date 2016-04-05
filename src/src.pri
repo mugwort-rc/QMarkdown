@@ -4,7 +4,6 @@ QT += xml
 HEADERS += \
     $$PWD/BlockParser.h \
     $$PWD/BlockProcessors.h \
-    $$PWD/ElementTree.h \
     $$PWD/InlinePatterns.h \
     $$PWD/Markdown.h \
     $$PWD/PostProcessors.h \
@@ -18,12 +17,18 @@ HEADERS += \
     $$PWD/pypp.hpp \
     $$PWD/odict.hpp \
     $$PWD/Processor.hpp \
-    $$PWD/xerces.hpp
+    $$PWD/xerces.hpp \
+    $$PWD/pypp/xml/etree/elementtree.h \
+    $$PWD/pypp/str.hpp \
+    $$PWD/pypp/re.hpp \
+    $$PWD/pypp/builtin.hpp \
+    $$PWD/pypp/exceptions.hpp \
+    $$PWD/pypp/slice.hpp \
+    $$PWD/ElementTree.hpp
 
 SOURCES += \
     $$PWD/BlockParser.cpp \
     $$PWD/BlockProcessors.cpp \
-    $$PWD/ElementTree.cpp \
     $$PWD/InlinePatterns.cpp \
     $$PWD/Markdown.cpp \
     $$PWD/PostProcessors.cpp \
@@ -32,4 +37,5 @@ SOURCES += \
     $$PWD/TreeProcessors.cpp \
     $$PWD/util.cpp \
     $$PWD/extensions/Extension.cpp \
-    $$PWD/extensions/tables.cpp
+    $$PWD/extensions/tables.cpp \
+    $$PWD/pypp/xml/etree/elementtree.cpp

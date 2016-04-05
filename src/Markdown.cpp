@@ -124,12 +124,12 @@ QString Markdown::convert(const QString &source)
 
     //! Parse the high-level elements.
     ElementTree doc = this->parser->parseDocument(lines);
-    Element root(doc);
+    Element root = doc.getroot();
 
     //! Run the tree-processors
     for ( OrderedDictTreeProcessors::ValueType tree : this->treeprocessors.toList() ) {
         Element newRoot = tree->run(root);
-        if ( ! newRoot.isNull() ) {
+        if ( newRoot ) {
             root = newRoot;
         }
     }

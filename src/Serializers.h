@@ -8,7 +8,7 @@
 #ifndef SERIALIZERS_H_
 #define SERIALIZERS_H_
 
-#include "ElementTree.h"
+#include "ElementTree.hpp"
 
 namespace markdown{
 

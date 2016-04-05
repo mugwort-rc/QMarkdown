@@ -7,7 +7,6 @@ Transplanted from the [Python Markdown][PythonMarkdown].
 ## Required Library
 
 - [Boost][Boost]
-- [Xerces-C++][Xerces-C++]
 
 [Boost]: http://www.boost.org/ "Boost C++ Library"
 [Xerces-C++]: http://xerces.apache.org/ "Apache Xerces Project"

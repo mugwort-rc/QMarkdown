@@ -20,6 +20,46 @@ void TestPypp::init()
 void TestPypp::cleanup()
 {}
 
+void TestPypp::test_slice_end()
+{
+    QCOMPARE(pypp::slice(0)(QString("0123456789")), QString());
+    QCOMPARE(pypp::slice(1)(QString("0123456789")), QString("0"));
+    QCOMPARE(pypp::slice(10)(QString("0123456789")), QString("0123456789"));
+    QCOMPARE(pypp::slice(-1)(QString("0123456789")), QString("012345678"));
+    QCOMPARE(pypp::slice(-10)(QString("0123456789")), QString());
+}
+
+void TestPypp::test_slice_begin_end()
+{
+    QCOMPARE(pypp::slice(1, 2)(QString("0123456789")), QString("1"));
+    QCOMPARE(pypp::slice(2, 1)(QString("0123456789")), QString());
+    QCOMPARE(pypp::slice(1, 10)(QString("0123456789")), QString("123456789"));
+    QCOMPARE(pypp::slice(-1, 10)(QString("0123456789")), QString("9"));
+    QCOMPARE(pypp::slice(-5, -1)(QString("0123456789")), QString("5678"));
+    QCOMPARE(pypp::slice(-10, 3)(QString("0123456789")), QString("012"));
+    QCOMPARE(pypp::slice(-10, -11)(QString("0123456789")), QString());
+}
+
+void TestPypp::test_begin_slice()
+{
+    QCOMPARE(pypp::begin_slice(0)(QString("0123456789")), QString("0123456789"));
+    QCOMPARE(pypp::begin_slice(1)(QString("0123456789")), QString("123456789"));
+    QCOMPARE(pypp::begin_slice(10)(QString("0123456789")), QString());
+    QCOMPARE(pypp::begin_slice(-1)(QString("0123456789")), QString("9"));
+    QCOMPARE(pypp::begin_slice(-10)(QString("0123456789")), QString("0123456789"));
+}
+
+void TestPypp::test_str_expandtabs()
+{
+    QCOMPARE(pypp::expandtabs("\t", 4), pypp::str(4, ' '));
+    QCOMPARE(pypp::expandtabs("+\t", 4), pypp::str("+   "));
+    QCOMPARE(pypp::expandtabs("++\t", 4), pypp::str("++  "));
+    QCOMPARE(pypp::expandtabs("+++\t", 4), pypp::str("+++ "));
+    QCOMPARE(pypp::expandtabs("++++\t", 4), pypp::str("++++    "));
+    QCOMPARE(pypp::expandtabs("\t+\t", 4), pypp::str("    +   "));
+    QCOMPARE(pypp::expandtabs("++\n\t", 4), pypp::str("++\n    "));
+}
+
 void TestPypp::test_re_sub()
 {
     auto repl = [](const QRegularExpressionMatch &) -> QString { return QString(); };

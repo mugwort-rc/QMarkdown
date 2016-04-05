@@ -27,10 +27,10 @@ BlockProcessor::~BlockProcessor()
 
 Element BlockProcessor::lastChild(const Element &parent)
 {
-    if ( parent.child().size() > 0 ) {
-        return parent.getLastElementChild();
+    if ( parent->size() > 0 ) {
+        return parent->getLastElementChild();
     }
-    return Element::InvalidElement;
+    return Element();
 }
 
 std::tuple<QString, QString> BlockProcessor::detab(const QString &text)
@@ -90,10 +90,13 @@ public:
 
     bool test(Element &parent, const QString &block)
     {
+        std::shared_ptr<BlockParser> parser = this->parser.lock();
+
         return block.startsWith(QString(this->tab_length, ' '))
-                && ( this->ITEM_TYPES.contains(parent.getTagName())
-                || ( parent.child().size() > 0
-                     && this->LIST_TYPES.contains(parent.getLastElementChild().getTagName()) )
+                && ! parser->state.isstate("detabbed")
+                && ( this->ITEM_TYPES.contains(parent->tag)
+                || ( parent->size() > 0
+                     && this->LIST_TYPES.contains(parent->getLastElementChild()->tag) )
                 );
 	}
 
@@ -109,44 +112,44 @@ public:
         block = this->looseDetab(block, level);
 
         parser->state.set("detabbed");
-        if ( this->ITEM_TYPES.contains(parent.getTagName()) ) {
+        if ( this->ITEM_TYPES.contains(parent->tag) ) {
             //! It's possible that this parent has a 'ul' or 'ol' child list
             //! with a member.  If that is the case, then that should be the
             //! parent.  This is intended to catch the edge case of an indented
             //! list whose first member was parsed previous to this point
             //! see OListProcessor
-            if ( parent.child().size() > 0 && this->LIST_TYPES.contains(parent.getLastElementChild().getTagName()) ) {
+            if ( parent->size() > 0 && this->LIST_TYPES.contains(parent->getLastElementChild()->tag) ) {
                 QStringList new_blocks = {block};
-                Element new_parent = parent.getLastElementChild();
+                Element new_parent = parent->getLastElementChild();
                 parser->parseBlocks(new_parent, new_blocks);
             } else {
                 QStringList new_blocks = {block};
                 //! The parent is already a li. Just parse the child block.
                 parser->parseBlocks(parent, new_blocks);
             }
-        } else if ( this->ITEM_TYPES.contains(sibling.getTagName()) ) {
+        } else if ( this->ITEM_TYPES.contains(sibling->tag) ) {
             //! The sibling is a li. Use it as parent.
             QStringList new_blocks = {block};
             parser->parseBlocks(sibling, new_blocks);
-        } else if ( sibling.child().size() > 0 && this->ITEM_TYPES.contains(sibling.getLastElementChild().getTagName()) ) {
+        } else if ( sibling->size() > 0 && this->ITEM_TYPES.contains(sibling->getLastElementChild()->tag) ) {
             //! The parent is a list (``ol`` or ``ul``) which has children.
             //! Assume the last child li is the parent of this block.
-            if ( sibling.getLastElementChild().hasText() ) {
+            if ( sibling->getLastElementChild()->hasText() ) {
                 //! If the parent li has text, that text needs to be moved to a p
                 //! The p must be 'inserted' at beginning of list in the event
                 //! that other children already exist i.e.; a nested sublist.
-                Element elem = sibling.getLastElementChild();
-                QString text = elem.text();
-                elem.removeText();
-                Element p(elem, "p");
-                p.setText(text);
-                if ( elem.child().size() > 0 ) {
-                    elem.insertBefore(p, elem.getFirstElementChild());
+                Element elem = sibling->getLastElementChild();
+                QString text = elem->text;
+                elem->text.clear();
+                Element p = createElement("p");
+                p->text = text;
+                if ( elem->size() > 0 ) {
+                    elem->insert(0, p);
                 } else {
-                    elem.append(p);
+                    elem->append(p);
                 }
             }
-            Element new_parent = sibling.getLastElementChild();
+            Element new_parent = sibling->getLastElementChild();
             parser->parseChunk(new_parent, block);
         } else {
             this->create_item(sibling, block);
@@ -161,8 +164,7 @@ public:
     {
         std::shared_ptr<BlockParser> parser = this->parser.lock();
 
-        Element li(parent, "li");
-        parent.append(li);
+        Element li = createSubElement(parent, "li");
         QStringList new_blocks = {block};
         parser->parseBlocks(li, new_blocks);
     }
@@ -189,20 +191,21 @@ public:
             level = 0;
         }
         //! Step through children of tree to find matching indent level.
+        Element parent_ = parent;
         while ( indent_level > level ) {
-            Element child = this->lastChild(parent);
-            if ( ! child.isNull() && ( this->LIST_TYPES.contains(child.getTagName()) || this->ITEM_TYPES.contains(child.getTagName()) ) ) {
-                if ( this->ITEM_TYPES.contains(child.getTagName()) ) {
+            Element child = this->lastChild(parent_);
+            if ( child && ( this->LIST_TYPES.contains(child->tag) || this->ITEM_TYPES.contains(child->tag) ) ) {
+                if ( this->LIST_TYPES.contains(child->tag) ) {
                     level += 1;
                 }
-                parent = child;
+                parent_ = child;
             } else {
                 //! No more child levels. If we're short of indent_level,
                 //! we have a code block. So we stop here.
                 break;
             }
         }
-        return std::make_tuple(level, parent);
+        return std::make_tuple(level, parent_);
     }
 
 private:
@@ -236,20 +239,21 @@ public:
         QString block = blocks.front();
         blocks.pop_front();
         QString theRest;
-        if ( ! sibling.isNull() && sibling.getTagName() == "pre" && sibling.child().size() > 0 && sibling.getFirstElementChild().getTagName() == "code" ) {
+        if ( sibling && sibling->tag == "pre" && sibling->size() > 0 && sibling->getFirstElementChild()->tag == "code" ) {
             //! The previous block was a code block. As blank lines do not start
             //! new code blocks, append this block to the previous, adding back
             //! linebreaks removed from the split into a list.
-            Element code = sibling.getFirstElementChild();
+            Element code = sibling->getFirstElementChild();
             std::tie(block, theRest) = this->detab(block);
-            code.setText(QString("%1\n%2\n").arg(code.text()).arg(pypp::rstrip(block)));
+            code->text = QString("%1\n%2\n").arg(code->text).arg(pypp::rstrip(block));
+            code->atomic = true;
         } else {
-            Element pre(parent, "pre");
-            parent.append(pre);
-            Element code(pre, "code");
-            pre.append(code);;
+            //! This is a new codeblock. Create the elements and insert text.
+            Element pre = createSubElement(parent, "pre");
+            Element code = createSubElement(pre, "code");
             std::tie(block, theRest) = this->detab(block);
-            code.setText(QString("%1\n").arg(pypp::rstrip(block)));
+            code->text = QString("%1\n").arg(pypp::rstrip(block));
+            code->atomic = true;
         }
         if ( ! theRest.isEmpty() ) {
             //! This block contained unindented line(s) after the first indented
@@ -296,14 +300,13 @@ public:
             block = new_lines.join("\n");
         }
         Element sibling = this->lastChild(parent);
-        Element quote = Element::InvalidElement;
-        if ( ! sibling.isNull() && sibling.getTagName() == "blockquote" ) {
+        Element quote = Element();
+        if ( sibling && sibling->tag == "blockquote" ) {
             //! Previous block was a blockquote so set that as this blocks parent
             quote = sibling;
         } else {
             //! This is a new blockquote. Create a new parent element.
-            quote = Element(parent, "blockquote");
-            parent.append(quote);
+            quote = createSubElement(parent, "blockquote");
         }
         //! Recursively parse block with blockquote as parent.
         //! change parser state so blockquotes embedded in lists use p tags
@@ -341,9 +344,9 @@ public:
     OListProcessor(const std::weak_ptr<BlockParser> &parser) :
         BlockProcessor(parser),
         TAG("ol"),
-        RE("^[ ]{0,3}\\d+\\.[ ]+(.*)"),
-        CHILD_RE("^[ ]{0,3}((\\d+\\.)|[*+-])[ ]+(.*)"),
-        INDENT_RE("^[ ]{4,7}((\\d+\\.)|[*+-])[ ]+.*"),
+        RE(QString("^[ ]{0,%1}\\d+\\.[ ]+(.*)").arg(this->tab_length-1)),
+        CHILD_RE(QString("^[ ]{0,%1}((\\d+\\.)|[*+-])[ ]+(.*)").arg(this->tab_length-1)),
+        INDENT_RE(QString("^[ ]{%1,%2}((\\d+\\.)|[*+-])[ ]+.*").arg(this->tab_length).arg(this->tab_length*2-1)),
         STARTSWITH("1"),
         SIBLING_TAGS({"ol", "ul"})
     {}
@@ -364,49 +367,45 @@ public:
         blocks.pop_front();
         QStringList items = this->get_items(block);
         Element sibling = this->lastChild(parent);
-        Element lst = Element::InvalidElement;
+        Element lst;
 
-        if ( ! sibling.isNull() && this->SIBLING_TAGS.contains(sibling.getTagName()) ) {
+        if ( sibling && this->SIBLING_TAGS.contains(sibling->tag) ) {
             //! Previous block was a list item, so set that as parent
             lst = sibling;
             //! make sure previous item is in a p- if the item has text, then it
             //! it isn't in a p
-            if ( lst.child().size() > 0 && lst.getLastElementChild().hasText() ) {
+            if ( lst->size() > 0 && lst->getLastElementChild()->hasText() ) {
                 //! since it's possible there are other children for this sibling,
                 //! we can't just SubElement the p, we need to insert it as the
                 //! first item
-                Element elem = lst.getLastElementChild();
-                Element p = Element(elem, "p");
-                QString text = elem.text();
-                elem.removeText();
-                p.setText(text);
-                if ( elem.child().size() > 0 ) {
-                    elem.insertBefore(p, elem.getFirstElementChild());
+                Element elem = lst->getLastElementChild();
+                Element p = createElement("p");
+                p->text = elem->text;
+                elem->text.clear();
+                if ( elem->size() > 0 ) {
+                    elem->insert(0, p);
                 } else {
-                    elem.append(p);
+                    elem->append(p);
                 }
             }
             //! if the last item has a tail, then the tail needs to be put in a p
             //! likely only when a header is not followed by a blank line
-            Element lch = this->lastChild(lst.getLastElementChild());
-            if ( ! lch.isNull() && lch.hasTail() ) {
-                QString tailText = pypp::lstrip(lch.tail());
-                lch.removeTail();
-                Element p(lst, "p");
-                p.setText(tailText);
-                lst.getLastElementChild().append(p);
+            Element lch = this->lastChild(lst->getLastElementChild());
+            if ( lch && lch->hasTail() ) {
+                Element p = createSubElement(lst->getLastElementChild(), "p");
+                p->text = pypp::lstrip(lch->tail);
+                lch->tail.clear();
             }
 
             //! parse first block differently as it gets wrapped in a p.
-            Element li(lst, "li");
-            lst.append(li);
+            Element li = createSubElement(lst, "li");
             parser->state.set("looselist");
             QString firstitem = items.front();
             items.pop_front();
             QStringList new_blocks = {firstitem};
             parser->parseBlocks(li, new_blocks);
             parser->state.reset();
-        } else if ( parent.getTagName() == "ol" || parent.getTagName() == "ul" ) {
+        } else if ( parent->tag == "ol" || parent->tag == "ul" ) {
             //! this catches the edge case of a multi-item indented list whose
             //! first item is in a blank parent-list item:
             //! * * subitem1
@@ -415,11 +414,10 @@ public:
             lst = parent;
         } else {
             //! This is a new list so create parent with appropriate tag.
-            lst = Element(parent, this->TAG);
-            parent.append(lst);
+            lst = createSubElement(parent, this->TAG);
             //! Check if a custom start integer is set
             if ( ! parser->markdown.lock()->lazy_ol() && this->STARTSWITH != "1" ) {
-                lst.setAttribute("start", this->STARTSWITH);
+                lst->set("start", this->STARTSWITH);
             }
         }
 
@@ -429,13 +427,12 @@ public:
         for ( const QString &item : items ) {
             QStringList new_blocks = {item};
             if ( item.startsWith(QString(this->tab_length, ' ')) ) {
-                Element new_parent = lst.getLastElementChild();
+                Element new_parent = lst->getLastElementChild();
                 //! Item is indented. Parse with last item as parent
                 parser->parseBlocks(new_parent, new_blocks);
             } else {
                 //! New item. Create li and parse with it as parent
-                Element li = Element(lst, "li");
-                lst.append(li);
+                Element li = createSubElement(lst, "li");
                 parser->parseBlocks(li, new_blocks);
             }
         }
@@ -505,7 +502,7 @@ public:
         OListProcessor(parser)
     {
         OListProcessor::TAG = "ul";
-        OListProcessor::RE = QRegularExpression("^[ ]{0,3}[*+-][ ]+(.*)");
+        OListProcessor::RE = QRegularExpression(QString("^[ ]{0,%1}[*+-][ ]+(.*)").arg(this->tab_length-1));
     }
 
 };
@@ -544,9 +541,8 @@ public:
                 parser->parseBlocks(parent, new_blocks);
             }
             //! Create header using named groups from RE
-            Element h = Element(parent, QString("h%1").arg(m.captured("level").size()));
-            parent.append(h);
-            h.setText(m.captured("header").trimmed());
+            Element h = createSubElement(parent, QString("h%1").arg(m.captured("level").size()));
+            h->text = m.captured("header").trimmed();
             if ( ! after.isEmpty() ) {
                 //! Insert remaining lines as first block for future parsing.
                 blocks.push_front(after);
@@ -591,9 +587,8 @@ public:
         } else {
             level = 2;
         }
-        Element h(parent, QString("h%1").arg(level));
-        parent.append(h);
-        h.setText(lines.at(0).trimmed());
+        Element h = createSubElement(parent, QString("h%1").arg(level));
+        h->text = lines.at(0).trimmed();
         if ( lines.size() > 2 ) {
             //! Block contains additional lines. Add to  master blocks for later.
             QStringList buff;
@@ -656,8 +651,7 @@ public:
             parser->parseBlocks(parent, new_blocks);
         }
         //! create hr
-        Element hr(parent, "hr");
-        parent.append(hr);
+        Element hr = createSubElement(parent, "hr");
         //! check for lines in block after hr.
         int begin = this->match.capturedStart()+this->match.capturedLength();
         QString postlines = pypp::lstrip(block.mid(begin), [](const QChar &ch) -> bool { return ch == '\n'; });
@@ -704,10 +698,11 @@ public:
             }
         }
         Element sibling = this->lastChild(parent);
-        if ( ! sibling.isNull() && sibling.getTagName() == "pre" && sibling.child().size() > 0 && sibling.getFirstElementChild().getTagName() == "code" ) {
+        if ( sibling && sibling->tag == "pre" && sibling->size() > 0 && sibling->getFirstElementChild()->tag == "code" ) {
             //! Last block is a codeblock. Append to preserve whitespace.
-            QString codeText = sibling.getFirstElementChild().text();
-            sibling.getFirstElementChild().setText(QString("%1%2").arg(codeText).arg(filler));
+            QString codeText = sibling->getFirstElementChild()->text;
+            sibling->getFirstElementChild()->text = QString("%1%2").arg(codeText).arg(filler);
+            sibling->getFirstElementChild()->atomic = true;
         }
     }
 
@@ -744,28 +739,27 @@ public:
                 //!     * # Header
                 //!     Line 2 of list item - not part of header.
                 Element sibling = this->lastChild(parent);
-                if ( ! sibling.isNull() ) {
+                if ( sibling ) {
                     //! Insetrt after sibling.
-                    if ( sibling.hasTail() ) {
-                        QString tailText = sibling.tail();
-                        sibling.setTail(QString("%1\n%2").arg(tailText).arg(block));
+                    if ( sibling->hasTail() ) {
+                        QString tailText = sibling->tail;
+                        sibling->tail = QString("%1\n%2").arg(tailText).arg(block);
                     } else {
-                        sibling.setTail(QString("\n%1").arg(block));
+                        sibling->tail = QString("\n%1").arg(block);
                     }
                 } else {
                     //! Append to parent.text
-                    if ( parent.hasText() ) {
-                        QString parentText = parent.text();
-                        parent.setText(QString("%1\n%2").arg(parentText).arg(block));
+                    if ( parent->hasText() ) {
+                        QString parentText = parent->text;
+                        parent->text = QString("%1\n%2").arg(parentText).arg(block);
                     } else {
-                        parent.setText(pypp::lstrip(block));
+                        parent->text = pypp::lstrip(block);
                     }
                 }
             } else {
                 //! Create a regular paragraph
-                Element p(parent, "p");
-                parent.append(p);
-                p.setText(pypp::lstrip(block));
+                Element p = createSubElement(parent, "p");
+                p->text = pypp::lstrip(block);
             }
         }
     }

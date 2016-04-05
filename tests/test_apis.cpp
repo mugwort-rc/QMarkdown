@@ -79,8 +79,7 @@ void TestBlockParser::cleanup()
 */
 void TestBlockParser::testParseChunk()
 {
-    markdown::ElementTree tree;
-    markdown::Element root(tree, "div");
+    markdown::Element root = markdown::createElement("div");
     QString text = "foo";
     this->parser->parseChunk(root, text);
     QCOMPARE(markdown::to_xhtml_string(root), QString("<div><p>foo</p></div>"));
@@ -405,4 +404,87 @@ void TestOrderedDict::testChangeOrder()
         qMakePair(QString("third"), QString("a")),
         qMakePair(QString("fifth"), QString("test")),
                                                                         }));
+}
+
+TestInlinePattern::TestInlinePattern()
+{
+
+}
+
+TestInlinePattern::~TestInlinePattern()
+{
+
+}
+
+void TestInlinePattern::initTestCase()
+{
+    this->md = markdown::create_Markdown();
+}
+
+void TestInlinePattern::cleanupTestCase()
+{
+
+}
+
+void TestInlinePattern::init()
+{
+
+}
+
+void TestInlinePattern::cleanup()
+{
+
+}
+
+void TestInlinePattern::test_backtick()
+{
+    std::shared_ptr<markdown::Pattern> backtick = this->md->inlinePatterns["backtick"];
+    QRegularExpressionMatch match = backtick->getCompiledRegExp().match("`code`");
+    QCOMPARE(match.hasMatch(), true);
+    QCOMPARE(match.captured(), QString("`code`"));
+}
+
+TestTreeProcessor::TestTreeProcessor()
+{
+
+}
+
+TestTreeProcessor::~TestTreeProcessor()
+{
+
+}
+
+void TestTreeProcessor::initTestCase()
+{
+    this->md = markdown::create_Markdown();
+}
+
+void TestTreeProcessor::cleanupTestCase()
+{
+
+}
+
+void TestTreeProcessor::init()
+{
+
+}
+
+void TestTreeProcessor::cleanup()
+{
+
+}
+
+void TestTreeProcessor::test_inline()
+{
+    std::shared_ptr<markdown::TreeProcessor> inlineProcessor = this->md->treeprocessors["inline"];
+
+    markdown::Element root = markdown::createElement("div");
+    markdown::Element p = markdown::createSubElement(root, "p");
+    p->text = "`<http://example.com>`";
+
+    markdown::Element ret = inlineProcessor->run(root);
+    QCOMPARE(ret->tag, QString("div"));
+    QCOMPARE(ret->child()[0]->tag, QString("p"));
+    QCOMPARE(ret->child()[0]->child()[0]->tag, QString("code"));
+    QCOMPARE(ret->child()[0]->child()[0]->text, QString("<http://example.com>"));
 }
