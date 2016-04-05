@@ -26,13 +26,13 @@ ElementTree BlockParser::parseDocument(const QStringList &lines)
 	return this->root;
 }
 
-void BlockParser::parseChunk(Element &parent, const QString &text)
+void BlockParser::parseChunk(const Element &parent, const QString &text)
 {
     QStringList buffer = text.split(QRegularExpression("\n\n"));
 	this->parseBlocks(parent, buffer);
 }
 
-void BlockParser::parseBlocks(Element &parent, QStringList &blocks)
+void BlockParser::parseBlocks(const Element &parent, QStringList &blocks)
 {
 	while ( blocks.size() > 0 ) {
         for (OrderedDictBlockProcessors::ValueType processor : this->blockprocessors.toList()) {

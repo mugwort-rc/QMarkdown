@@ -107,7 +107,7 @@ public:
 	 *   The ``parent`` etree Element passed in is altered in place.
 	 *   Nothing is returned.
 	 */
-    void parseChunk(Element &parent, const QString &text);
+    void parseChunk(const Element &parent, const QString &text);
 
 	/*!
 	 * Process blocks of markdown text and attach to given etree node.
@@ -120,7 +120,7 @@ public:
 	 *   BlockProcessors which call this method to recursively parse a nested
 	 *   block.
      */
-    void parseBlocks(Element &parent, QStringList &blocks);
+    void parseBlocks(const Element &parent, QStringList &blocks);
 
 public:
     std::weak_ptr<Markdown> markdown;

@@ -88,7 +88,7 @@ public:
 	~ListIndentProcessor(void)
 	{}
 
-    bool test(Element &parent, const QString &block)
+    bool test(const Element &parent, const QString &block)
     {
         std::shared_ptr<BlockParser> parser = this->parser.lock();
 
@@ -100,7 +100,7 @@ public:
                 );
 	}
 
-    void run(Element &parent, QStringList &blocks)
+    void run(const Element &parent, QStringList &blocks)
     {
         std::shared_ptr<BlockParser> parser = this->parser.lock();
 
@@ -160,7 +160,7 @@ public:
     /*!
      * Create a new li and parse the block with it as the parent.
      */
-    void create_item(Element &parent, const QString &block)
+    void create_item(const Element &parent, const QString &block)
     {
         std::shared_ptr<BlockParser> parser = this->parser.lock();
 
@@ -172,7 +172,7 @@ public:
     /*!
      * Get level of indent based on list level.
      */
-    std::tuple<int, Element> get_level(Element &parent, const QString &block)
+    std::tuple<int, Element> get_level(const Element &parent, const QString &block)
     {
         std::shared_ptr<BlockParser> parser = this->parser.lock();
 
@@ -228,12 +228,12 @@ class CodeBlockProcessor : public BlockProcessor
 public:
     using BlockProcessor::BlockProcessor;
 
-    bool test(Element &, const QString &block)
+    bool test(const Element &, const QString &block)
     {
         return block.startsWith(QString(this->tab_length, ' '));
     }
 
-    void run(Element &parent, QStringList &blocks)
+    void run(const Element &parent, QStringList &blocks)
     {
         Element sibling = this->lastChild(parent);
         QString block = blocks.front();
@@ -273,12 +273,12 @@ public:
         RE("(^|\\n)[ ]{0,3}>[ ]?(.*)")
     {}
 
-    bool test(Element &, const QString &block)
+    bool test(const Element &, const QString &block)
     {
         return this->RE.match(block).hasMatch();
     }
 
-    void run(Element &parent, QStringList &blocks)
+    void run(const Element &parent, QStringList &blocks)
     {
         std::shared_ptr<BlockParser> parser = this->parser.lock();
 
@@ -353,12 +353,12 @@ public:
     virtual ~OListProcessor()
     {}
 
-    bool test(Element &, const QString &block)
+    bool test(const Element &, const QString &block)
     {
         return this->RE.match(block).hasMatch();
     }
 
-    void run(Element &parent, QStringList &blocks)
+    void run(const Element &parent, QStringList &blocks)
     {
         std::shared_ptr<BlockParser> parser = this->parser.lock();
 
@@ -518,12 +518,12 @@ public:
         RE("(^|\\n)(?<level>#{1,6})(?<header>.*?)#*(\\n|$)")
     {}
 
-    bool test(Element &, const QString &block)
+    bool test(const Element &, const QString &block)
     {
         return this->RE.match(block).hasMatch();
     }
 
-    void run(Element &parent, QStringList &blocks)
+    void run(const Element &parent, QStringList &blocks)
     {
         std::shared_ptr<BlockParser> parser = this->parser.lock();
 
@@ -570,12 +570,12 @@ public:
         RE("^.*?\\n[=-]+[ ]*(\\n|$)", QRegularExpression::MultilineOption)
     {}
 
-    bool test(Element &, const QString &block)
+    bool test(const Element &, const QString &block)
     {
         return this->RE.match(block).hasMatch();
     }
 
-    void run(Element &parent, QStringList &blocks)
+    void run(const Element &parent, QStringList &blocks)
     {
         QString block = blocks.front();
         blocks.pop_front();
@@ -621,7 +621,7 @@ public:
         match()
     {}
 
-    bool test(Element &, const QString &block)
+    bool test(const Element &, const QString &block)
     {
         //! No atomic grouping in python so we simulate it here for performance.
         //! The regex only matches what would be in the atomic group - the HR.
@@ -637,7 +637,7 @@ public:
         return false;
     }
 
-    void run(Element &parent, QStringList &blocks)
+    void run(const Element &parent, QStringList &blocks)
     {
         std::shared_ptr<BlockParser> parser = this->parser.lock();
 
@@ -676,12 +676,12 @@ class EmptyBlockProcessor : public BlockProcessor
 public:
     using BlockProcessor::BlockProcessor;
 
-    bool test(Element &, const QString &block)
+    bool test(const Element &, const QString &block)
     {
         return block.isEmpty() || block.startsWith('\n');
     }
 
-    void run(Element &parent, QStringList &blocks)
+    void run(const Element &parent, QStringList &blocks)
     {
         QString block = blocks.front();
         blocks.pop_front();
@@ -716,12 +716,12 @@ class ParagraphProcessor : public BlockProcessor
 public:
     using BlockProcessor::BlockProcessor;
 
-    bool test(Element &, const QString &)
+    bool test(const Element &, const QString &)
     {
         return true;
     }
 
-    void run(Element &parent, QStringList &blocks)
+    void run(const Element &parent, QStringList &blocks)
     {
         std::shared_ptr<BlockParser> parser = this->parser.lock();
 

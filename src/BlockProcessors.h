@@ -57,7 +57,7 @@ public:
 	 *   * ``block``: A block of text from the source which has been split at
 	 *       blank lines.
 	 */
-    virtual bool test(Element &parent, const QString &block) = 0;
+    virtual bool test(const Element &parent, const QString &block) = 0;
 	/*!
 	 * Run processor. Must be overridden by subclasses.
 	 *
@@ -80,7 +80,7 @@ public:
 	 *   * ``parent``: A etree element which is the parent of the current block.
 	 *   * ``blocks``: A list of all remaining blocks of the document.
 	 */
-    virtual void run(Element &parent, QStringList &block) = 0;
+    virtual void run(const Element &parent, QStringList &block) = 0;
 
 protected:
     std::weak_ptr<BlockParser> parser;

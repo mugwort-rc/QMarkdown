@@ -27,7 +27,7 @@ public:
         CHECK_CHARS({'|', ':', '-'})
     {}
 
-    bool test(Element &, const QString &block)
+    bool test(const Element &, const QString &block)
     {
         QStringList rows = block.split("\n");
         return rows.size() > 2
@@ -40,7 +40,7 @@ public:
     /*!
      * Parse a table block and build table.
      */
-    void run(Element &parent, QStringList &blocks)
+    void run(const Element &parent, QStringList &blocks)
     {
         QString blocksTmp = blocks.front();
         blocks.pop_front();
@@ -87,7 +87,7 @@ private:
     /*!
      * Given a row of text, build table cells.
      */
-    void build_row(const QString &row, Element &parent, const QList<boost::optional<QString>> &align, bool border)
+    void build_row(const QString &row, const Element &parent, const QList<boost::optional<QString>> &align, bool border)
     {
         Element tr = createSubElement(parent, "tr");
         QString tag = "td";

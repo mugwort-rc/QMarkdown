@@ -35,7 +35,7 @@ public:
     TreeProcessor(const std::weak_ptr<Markdown> &md_instance);
     virtual ~TreeProcessor(void);
 
-    virtual Element run(Element &root) = 0;
+    virtual Element run(const Element &root) = 0;
 
 public:
     std::weak_ptr<Markdown> markdown;

@@ -79,7 +79,7 @@ private:
     /*!
      * Add node to stash
      */
-    QString stashNode(Element &node, const QString &type)
+    QString stashNode(const Element &node, const QString &type)
     {
         QString placeholder, id;
         std::tie(placeholder, id) = this->makePlaceholder(type);
@@ -136,7 +136,7 @@ private:
      * Returns: None
      *
      */
-    void processElementText(Element &node, Element &subnode, bool isText=true)
+    void processElementText(const Element &node, const Element &subnode, bool isText=true)
     {
         QString text;
         if ( isText ) {
@@ -160,7 +160,7 @@ private:
             pos = 0;
         }
 
-        for ( Element &newChild : childResult ) {
+        for ( const Element &newChild : childResult ) {
             node->insert(pos++, newChild);
         }
     }
@@ -176,7 +176,7 @@ private:
      * Returns: list with ElementTree elements with applied inline patterns.
      *
      */
-    ElementList_t processPlaceholders(const QString &data, Element &parent, bool isText=true)
+    ElementList_t processPlaceholders(const QString &data, const Element &parent, bool isText=true)
     {
         ElementList_t result;
         auto linkText = [&](const QString &text, bool atomic=false){
@@ -227,10 +227,10 @@ private:
                     if ( ! str ) {
                         //! it's Element
                         ElementList_t nodes = {*nodeptr};
-                        for ( Element &e : (*nodeptr)->child() ) {
+                        for ( const Element &e : (*nodeptr)->child() ) {
                             nodes.push_back(e);
                         }
-                        for ( Element &child : nodes ) {
+                        for ( const Element &child : nodes ) {
                             if ( child->hasTail() ) {
                                 if ( ! child->tail.trimmed().isEmpty() ) {
                                     Element new_node = *nodeptr;
@@ -303,7 +303,7 @@ private:
                     //! We need to process current node too
                     ElementList_t nodes = {node};
                     nodes.append(node->child());
-                    for ( Element &child : nodes ) {
+                    for ( const Element &child : nodes ) {
                         if ( child->hasText() ) {
                             QString text = child->text;
                             if ( ! child->atomic ) {
@@ -345,7 +345,7 @@ private:
      * Returns: ElementTree object with applied inline patterns.
      *
      */
-    Element run(Element &tree)
+    Element run(const Element &tree)
     {
         std::shared_ptr<Markdown> markdown = this->markdown.lock();
 
@@ -359,7 +359,7 @@ private:
                 typedef QPair<Element, ElementList_t> QueueItem;
                 typedef QList<QueueItem> Queue;
                 Queue insertQueue;
-                for ( Element &child : currElement->child() ) {
+                for ( const Element &child : currElement->child() ) {
                     if ( child->hasText() && ! child->atomic ) {
                         QString text = child->text;
                         child->text.clear();
@@ -396,7 +396,7 @@ private:
                         }
                     }
                     int i = 0;
-                    for ( Element &newChild : lst ) {
+                    for ( const Element &newChild : lst ) {
                         if ( markdown->enable_attributes() ) {
                             //! Processing attributes
                             if ( newChild->hasTail() ) {
@@ -441,14 +441,14 @@ private:
     /*!
      * Recursively add linebreaks to ElementTree children.
      */
-    void prettifyETree(Element &elem)
+    void prettifyETree(const Element &elem)
     {
         if ( util::isBlockLevel(elem->tag) && elem->tag != "code" && elem->tag != "pre" ) {
             if ( ( ! elem->hasText() || elem->text.trimmed().isEmpty() )
                  && elem->size() > 0 && util::isBlockLevel(elem->child().front()->tag) ) {
                 elem->text = "\n";
             }
-            for ( Element &e : elem->child() ) {
+            for ( const Element &e : elem->child() ) {
                 if ( util::isBlockLevel(e->tag) ) {
                     this->prettifyETree(e);
                 }
@@ -466,12 +466,12 @@ public:
     /*!
      * Add linebreaks to ElementTree root object.
      */
-    Element run(Element &root)
+    Element run(const Element &root)
     {
         this->prettifyETree(root);
         //! Do <br />'s seperately as they are often in the middle of
         //! inline content and missed by _prettifyETree.
-        for ( Element &br : root->iter("br") ) {
+        for ( const Element &br : root->iter("br") ) {
             if ( ! br->hasTail() || br->tail.trimmed().isEmpty() ) {
                 br->tail = "\n";
             } else {
@@ -479,7 +479,7 @@ public:
             }
         }
         //! Clean up extra empty lines at end of code blocks.
-        for ( Element &pre : root->iter("pre") ) {
+        for ( const Element &pre : root->iter("pre") ) {
             if ( pre->size() > 0 && pre->child().front()->tag == "code" ) {
                 pre->child().front()->text = pypp::rstrip(pre->child().front()->text)+"\n";
                 pre->child().front()->atomic = true;
