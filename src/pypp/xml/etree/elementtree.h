@@ -7,6 +7,7 @@
 #include <QMap>
 #include <QPair>
 
+#include "../../exceptions.hpp"
 #include "../../str.hpp"
 
 namespace pypp {
@@ -139,11 +140,11 @@ public:
      */
     ElementPtr &operator [](int index)
     {
-        return this->_children[index];
+        return this->_children[this->normalize_index(index)];
     }
     const ElementPtr &operator [](int index) const
     {
-        return this->_children.at(index);
+        return this->_children.at(this->normalize_index(index));
     }
 
     /*!
@@ -154,7 +155,7 @@ public:
      */
     void removeAt(int index)
     {
-        this->_children.removeAt(index);
+        this->_children.removeAt(this->normalize_index(index));
     }
 
     /*!
@@ -188,6 +189,15 @@ public:
      */
     void insert(int index, const ElementPtr &element)
     {
+        if ( index < 0 ) {
+            index += this->size();
+        }
+        if ( index < 0 ) {
+            index = 0;
+        }
+        if ( index > this->size() ) {
+            index = this->size();
+        }
         this->_children.insert(index, element);
     }
 
@@ -354,23 +364,13 @@ public:
         return result;
     }
 
-    ElementList_t child() const
-    {
-        return this->_children;
-    }
-
 
 
     bool atomic;
 
-    ElementPtr getFirstElementChild() const
+    ElementList_t child() const
     {
-        return this->operator [](0);
-    }
-
-    ElementPtr getLastElementChild() const
-    {
-        return this->operator [](this->size()-1);
+        return this->_children;
     }
 
     bool hasText() const
@@ -380,6 +380,18 @@ public:
     bool hasTail() const
     {
         return ! this->tail.isEmpty();
+    }
+
+protected:
+    int normalize_index(int index) const
+    {
+        if ( index < 0 ) {
+            index += this->size();
+        }
+        if ( index < 0 || index >= this->size() ) {
+            throw pypp::IndexError();
+        }
+        return index;
     }
 
 private:

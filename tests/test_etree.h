@@ -23,6 +23,7 @@ private slots:
     void test_toString();
 
     void test_element_names();
+    void test_element_child();
 
 private:
     markdown::ElementTree root;

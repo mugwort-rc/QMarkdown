@@ -48,3 +48,34 @@ void TestEtree::test_element_names()
     //QCOMPARE(el.getTagName(), QString("name"));
 }
 
+void TestEtree::test_element_child()
+{
+    markdown::Element root = markdown::createElement("root");
+    markdown::Element a = markdown::createSubElement(root, "a");
+    markdown::Element b = markdown::createSubElement(root, "b");
+    markdown::Element c = markdown::createSubElement(root, "c");
+    QCOMPARE(root->size(), 3);
+    QCOMPARE((*root)[0]->tag, a->tag);
+    QCOMPARE((*root)[1]->tag, b->tag);
+    QCOMPARE((*root)[2]->tag, c->tag);
+    QCOMPARE((*root)[-1]->tag, c->tag);
+    QCOMPARE((*root)[-2]->tag, b->tag);
+    QCOMPARE((*root)[-3]->tag, a->tag);
+
+    bool excepted1 = false;
+    try {
+        (*root)[3];
+    } catch ( const pypp::IndexError & ) {
+        excepted1 = true;
+    }
+    QCOMPARE(excepted1, true);
+
+    bool excepted2 = false;
+    try {
+        (*root)[-4];
+    } catch ( const pypp::IndexError & ) {
+        excepted2 = true;
+    }
+    QCOMPARE(excepted2, true);
+}
+

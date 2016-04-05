@@ -28,7 +28,7 @@ BlockProcessor::~BlockProcessor()
 Element BlockProcessor::lastChild(const Element &parent)
 {
     if ( parent->size() > 0 ) {
-        return parent->getLastElementChild();
+        return (*parent)[-1];
     }
     return Element();
 }
@@ -96,7 +96,7 @@ public:
                 && ! parser->state.isstate("detabbed")
                 && ( this->ITEM_TYPES.contains(parent->tag)
                 || ( parent->size() > 0
-                     && this->LIST_TYPES.contains(parent->getLastElementChild()->tag) )
+                     && this->LIST_TYPES.contains((*parent)[-1]->tag) )
                 );
 	}
 
@@ -118,9 +118,9 @@ public:
             //! parent.  This is intended to catch the edge case of an indented
             //! list whose first member was parsed previous to this point
             //! see OListProcessor
-            if ( parent->size() > 0 && this->LIST_TYPES.contains(parent->getLastElementChild()->tag) ) {
+            if ( parent->size() > 0 && this->LIST_TYPES.contains((*parent)[-1]->tag) ) {
                 QStringList new_blocks = {block};
-                Element new_parent = parent->getLastElementChild();
+                Element new_parent = (*parent)[-1];
                 parser->parseBlocks(new_parent, new_blocks);
             } else {
                 QStringList new_blocks = {block};
@@ -131,14 +131,14 @@ public:
             //! The sibling is a li. Use it as parent.
             QStringList new_blocks = {block};
             parser->parseBlocks(sibling, new_blocks);
-        } else if ( sibling->size() > 0 && this->ITEM_TYPES.contains(sibling->getLastElementChild()->tag) ) {
+        } else if ( sibling->size() > 0 && this->ITEM_TYPES.contains((*sibling)[-1]->tag) ) {
             //! The parent is a list (``ol`` or ``ul``) which has children.
             //! Assume the last child li is the parent of this block.
-            if ( sibling->getLastElementChild()->hasText() ) {
+            if ( (*sibling)[-1]->hasText() ) {
                 //! If the parent li has text, that text needs to be moved to a p
                 //! The p must be 'inserted' at beginning of list in the event
                 //! that other children already exist i.e.; a nested sublist.
-                Element elem = sibling->getLastElementChild();
+                Element elem = (*sibling)[-1];
                 QString text = elem->text;
                 elem->text.clear();
                 Element p = createElement("p");
@@ -149,7 +149,7 @@ public:
                     elem->append(p);
                 }
             }
-            Element new_parent = sibling->getLastElementChild();
+            Element new_parent = (*sibling)[-1];
             parser->parseChunk(new_parent, block);
         } else {
             this->create_item(sibling, block);
@@ -239,11 +239,11 @@ public:
         QString block = blocks.front();
         blocks.pop_front();
         QString theRest;
-        if ( sibling && sibling->tag == "pre" && sibling->size() > 0 && sibling->getFirstElementChild()->tag == "code" ) {
+        if ( sibling && sibling->tag == "pre" && sibling->size() > 0 && (*sibling)[0]->tag == "code" ) {
             //! The previous block was a code block. As blank lines do not start
             //! new code blocks, append this block to the previous, adding back
             //! linebreaks removed from the split into a list.
-            Element code = sibling->getFirstElementChild();
+            Element code = (*sibling)[0];
             std::tie(block, theRest) = this->detab(block);
             code->text = QString("%1\n%2\n").arg(code->text).arg(pypp::rstrip(block));
             code->atomic = true;
@@ -374,11 +374,11 @@ public:
             lst = sibling;
             //! make sure previous item is in a p- if the item has text, then it
             //! it isn't in a p
-            if ( lst->size() > 0 && lst->getLastElementChild()->hasText() ) {
+            if ( lst->size() > 0 && (*lst)[-1]->hasText() ) {
                 //! since it's possible there are other children for this sibling,
                 //! we can't just SubElement the p, we need to insert it as the
                 //! first item
-                Element elem = lst->getLastElementChild();
+                Element elem = (*lst)[-1];
                 Element p = createElement("p");
                 p->text = elem->text;
                 elem->text.clear();
@@ -390,9 +390,9 @@ public:
             }
             //! if the last item has a tail, then the tail needs to be put in a p
             //! likely only when a header is not followed by a blank line
-            Element lch = this->lastChild(lst->getLastElementChild());
+            Element lch = this->lastChild((*lst)[-1]);
             if ( lch && lch->hasTail() ) {
-                Element p = createSubElement(lst->getLastElementChild(), "p");
+                Element p = createSubElement((*lst)[-1], "p");
                 p->text = pypp::lstrip(lch->tail);
                 lch->tail.clear();
             }
@@ -427,7 +427,7 @@ public:
         for ( const QString &item : items ) {
             QStringList new_blocks = {item};
             if ( item.startsWith(QString(this->tab_length, ' ')) ) {
-                Element new_parent = lst->getLastElementChild();
+                Element new_parent = (*lst)[-1];
                 //! Item is indented. Parse with last item as parent
                 parser->parseBlocks(new_parent, new_blocks);
             } else {
@@ -698,11 +698,11 @@ public:
             }
         }
         Element sibling = this->lastChild(parent);
-        if ( sibling && sibling->tag == "pre" && sibling->size() > 0 && sibling->getFirstElementChild()->tag == "code" ) {
+        if ( sibling && sibling->tag == "pre" && sibling->size() > 0 && (*sibling)[0]->tag == "code" ) {
             //! Last block is a codeblock. Append to preserve whitespace.
-            QString codeText = sibling->getFirstElementChild()->text;
-            sibling->getFirstElementChild()->text = QString("%1%2").arg(codeText).arg(filler);
-            sibling->getFirstElementChild()->atomic = true;
+            QString codeText = (*sibling)[0]->text;
+            (*sibling)[0]->text = QString("%1%2").arg(codeText).arg(filler);
+            (*sibling)[0]->atomic = true;
         }
     }
 
