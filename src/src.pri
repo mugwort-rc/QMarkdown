@@ -1,5 +1,4 @@
 CONFIG += c++11
-QT += xml
 
 HEADERS += \
     $$PWD/BlockParser.h \
@@ -17,7 +16,6 @@ HEADERS += \
     $$PWD/pypp.hpp \
     $$PWD/odict.hpp \
     $$PWD/Processor.hpp \
-    $$PWD/xerces.hpp \
     $$PWD/pypp/xml/etree/elementtree.h \
     $$PWD/pypp/str.hpp \
     $$PWD/pypp/re.hpp \

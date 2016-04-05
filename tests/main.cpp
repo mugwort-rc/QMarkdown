@@ -1,17 +1,12 @@
 #include <QtTest>
 #include <QCoreApplication>
 
-#include "xerces.hpp"
-
 #include "test_pypp.h"
 #include "test_etree.h"
 #include "test_apis.h"
 #include "test_basic.h"
 
 int main(int argc, char *argv[]) {
-    XercesInitializer xerces;
-    Q_UNUSED(xerces);
-
     QCoreApplication app(argc, argv);
     Q_UNUSED(app)
 

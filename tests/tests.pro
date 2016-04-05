@@ -20,6 +20,4 @@ HEADERS += \
 
 INCLUDEPATH += ../src/
 
-LIBS += -lxerces-c
-
 include($$PWD/../src/src.pri)
