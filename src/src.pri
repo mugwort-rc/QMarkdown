@@ -16,13 +16,13 @@ HEADERS += \
     $$PWD/pypp.hpp \
     $$PWD/odict.hpp \
     $$PWD/Processor.hpp \
-    $$PWD/pypp/xml/etree/elementtree.h \
     $$PWD/pypp/str.hpp \
     $$PWD/pypp/re.hpp \
     $$PWD/pypp/builtin.hpp \
     $$PWD/pypp/exceptions.hpp \
     $$PWD/pypp/slice.hpp \
-    $$PWD/ElementTree.hpp
+    $$PWD/ElementTree.hpp \
+    $$PWD/pypp/xml/etree/elementtree.hpp
 
 SOURCES += \
     $$PWD/BlockParser.cpp \
@@ -35,5 +35,4 @@ SOURCES += \
     $$PWD/TreeProcessors.cpp \
     $$PWD/util.cpp \
     $$PWD/extensions/Extension.cpp \
-    $$PWD/extensions/tables.cpp \
-    $$PWD/pypp/xml/etree/elementtree.cpp
+    $$PWD/extensions/tables.cpp

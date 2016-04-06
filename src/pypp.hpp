@@ -7,7 +7,7 @@
 #include "pypp/str.hpp"
 #include "pypp/re.hpp"
 
-#include "pypp/xml/etree/elementtree.h"
+#include "pypp/xml/etree/elementtree.hpp"
 
 #endif // PYPP_HPP_
 

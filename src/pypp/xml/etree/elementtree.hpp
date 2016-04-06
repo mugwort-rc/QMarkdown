@@ -1,5 +1,5 @@
-#ifndef PYPP_ELEMENTTREE_H
-#define PYPP_ELEMENTTREE_H
+#ifndef PYPP_ELEMENTTREE_HPP
+#define PYPP_ELEMENTTREE_HPP
 
 #include <memory>
 
@@ -16,34 +16,67 @@ namespace xml {
 
 namespace etree {
 
-class Element;
-typedef std::shared_ptr<Element> ElementPtr;
-typedef QList<ElementPtr> ElementList_t;
 typedef QMap<pypp::str, pypp::str> Namespaces_t;
 typedef QPair<pypp::str, pypp::str> Item_t;
 typedef QList<Item_t> ItemList_t;
 
 
+template <class Impl>
 class SimpleElementPath
 {
 public:
-    static ElementPtr find(const ElementPtr &element, const pypp::str &tag, const Namespaces_t &namespaces=Namespaces_t());
+    inline static typename Impl::ElementPtr find(const typename Impl::ElementPtr &element, const pypp::str &tag, const Namespaces_t &namespaces=Namespaces_t())
+    {
+        for ( const typename Impl::ElementPtr &elem : (*element) ) {
+            if ( elem->tag == tag ) {
+                return elem;
+            }
+        }
+        return typename Impl::ElementPtr();
+    }
 
-    static pypp::str findtext(const ElementPtr &element, const pypp::str &tag, const pypp::str &default_, const Namespaces_t &namespaces=Namespaces_t());
+    inline static pypp::str findtext(const typename Impl::ElementPtr &element, const pypp::str &tag, const pypp::str &default_, const Namespaces_t &namespaces=Namespaces_t())
+    {
+        typename Impl::ElementPtr elem = SimpleElementPath::find(element, tag);
+        if ( ! elem ) {
+            return default_;
+        }
+        return elem->text;
+    }
 
-    static ElementList_t iterfind(const ElementPtr &element, const pypp::str &tag, const Namespaces_t &namespaces=Namespaces_t());
+    inline static typename Impl::ElementList_t iterfind(const typename Impl::ElementPtr &element, const pypp::str &tag, const Namespaces_t &namespaces=Namespaces_t())
+    {
+        typename Impl::ElementList_t result;
+        if ( tag.startsWith(".//") ) {
+            for ( const typename Impl::ElementPtr &elem : element->iter(tag.mid(3)) ) {
+                result.append(elem);
+            }
+        }
+        for ( const typename Impl::ElementPtr &elem : (*element) ) {
+            if ( elem->tag == tag ) {
+                result.append(elem);
+            }
+        }
+        return result;
+    }
 
-    static ElementList_t findall(const ElementPtr &element, const pypp::str &tag, const Namespaces_t &namespaces=Namespaces_t());
+    inline static typename Impl::ElementList_t findall(const typename Impl::ElementPtr &element, const pypp::str &tag, const Namespaces_t &namespaces=Namespaces_t())
+    {
+        return SimpleElementPath::iterfind(element, tag, namespaces);
+    }
 
 };
 
-typedef SimpleElementPath ElementPath;
 
-
-class Element : public std::enable_shared_from_this<Element>
+template <class Impl>
+class ElementImpl : public std::enable_shared_from_this<Impl>
 {
 public:
+    typedef std::shared_ptr<Impl> ElementPtr;
     typedef QMap<pypp::str, pypp::str> Attribute_t;
+    typedef QList<ElementPtr> ElementList_t;
+
+    typedef SimpleElementPath<Impl> ElementPath;
 
     /*!
       (Attribute) Element tag.
@@ -79,17 +112,14 @@ public:
     /*!
       constructor
      */
-    Element(const pypp::str &tag, const Attribute_t &attrib=Attribute_t()) :
+    ElementImpl(const pypp::str &tag, const Attribute_t &attrib=Attribute_t()) :
         tag(tag),
         attrib(attrib),
         text(),
         tail(),
-
-        atomic(false),
-
         _children()
     {}
-    virtual ~Element()
+    virtual ~ElementImpl()
     {}
 
     /*!
@@ -101,7 +131,7 @@ public:
      */
     static ElementPtr makeelement(const pypp::str &tag, const Attribute_t &attrib=Attribute_t())
     {
-        return ElementPtr(new Element(tag, attrib));
+        return ElementPtr(new Impl(tag, attrib));
     }
 
     /*!
@@ -110,14 +140,7 @@ public:
 
       @return A new element instance.
      */
-    ElementPtr copy() const
-    {
-        ElementPtr elem = Element::makeelement(this->tag, this->attrib);
-        elem->text = this->text;
-        elem->tail = this->tail;
-        elem->_children = this->_children;
-        return elem;
-    }
+    virtual ElementPtr copy() const = 0;
 
     /*!
       Returns the number of subelements.  Note that this only counts
@@ -177,7 +200,7 @@ public:
       @param elements A sequence object with zero or more elements.
       @since 1.3
      */
-    void extend(const QList<ElementPtr> &elements)
+    void extend(const ElementList_t &elements)
     {
         this->_children.append(elements);
     }
@@ -357,29 +380,28 @@ public:
             result.append(this->shared_from_this());
         }
         for ( const ElementPtr &elem : this->_children ) {
-            for ( const ElementPtr e : elem->iter(tag) ) {
+            for ( const ElementPtr &e : elem->iter(tag) ) {
                 result.append(e);
             }
         }
         return result;
     }
 
-
-
-    bool atomic;
-
-    ElementList_t child() const
+    typename ElementList_t::iterator begin()
     {
-        return this->_children;
+        return this->_children.beign();
     }
-
-    bool hasText() const
+    typename ElementList_t::const_iterator begin() const
     {
-        return ! this->text.isEmpty();
+        return this->_children.begin();
     }
-    bool hasTail() const
+    typename ElementList_t::iterator end()
     {
-        return ! this->tail.isEmpty();
+        return this->_children.end();
+    }
+    typename ElementList_t::const_iterator end() const
+    {
+        return this->_children.end();
     }
 
 protected:
@@ -394,43 +416,65 @@ protected:
         return index;
     }
 
-private:
     ElementList_t _children;
 
 };
 
+class Element : public ElementImpl<Element>
+{
+public:
+    using ElementImpl::ElementImpl;
+
+    ElementPtr copy() const
+    {
+        ElementPtr elem = Element::makeelement(this->tag, this->attrib);
+        elem->text = this->text;
+        elem->tail = this->tail;
+        elem->_children = this->_children;
+        return elem;
+    }
+
+};
+
+typedef Element::ElementPtr ElementPtr;
+typedef Element::ElementList_t ElementList_t;
+
+template <class ElementPtr>
 inline ElementPtr SubElement(const ElementPtr &parent, const pypp::str &tag, const Namespaces_t &attrib=Namespaces_t())
 {
-    ElementPtr element = Element::makeelement(tag, attrib);
+    ElementPtr element = ElementPtr::element_type::makeelement(tag, attrib);
     parent->append(element);
     return element;
 }
 
-class ElementTree
+template <class Impl>
+class ElementTreeImpl
 {
 public:
-    ElementTree(const ElementPtr &element=ElementPtr()) :
+    ElementTreeImpl(const typename Impl::ElementPtr &element=typename Impl::ElementPtr()) :
         _root(element)
     {}
 
-    ElementPtr getroot() const
+    typename Impl::ElementPtr getroot() const
     {
         return this->_root;
     }
-    void _setroot(const ElementPtr &element)
+    void _setroot(const typename Impl::ElementPtr &element)
     {
         this->_root = element;
     }
 
-    ElementList_t iter(const pypp::str &tag=pypp::str())
+    typename Impl::ElementList_t iter(const pypp::str &tag=pypp::str())
     {
         return this->_root->iter(tag);
     }
 
 private:
-    ElementPtr _root;
+    typename Impl::ElementPtr _root;
 
 };
+
+typedef ElementTreeImpl<Element> ElementTree;
 
 } // namespace etree
 
@@ -438,4 +482,4 @@ private:
 
 } // namespace pypp
 
-#endif // PYPP_ELEMENTTREE_H
+#endif // PYPP_ELEMENTTREE_HPP
