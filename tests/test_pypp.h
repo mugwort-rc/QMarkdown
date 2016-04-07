@@ -19,6 +19,8 @@ private slots:
     void init();
     void cleanup();
 
+    void test_reversed();
+    void test_sorted();
     void test_slice_end();
     void test_slice_begin_end();
     void test_begin_slice();

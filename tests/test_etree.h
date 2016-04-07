@@ -20,7 +20,7 @@ private slots:
     void cleanup();
 
     void test_Element();
-    void test_toString();
+    void test_tostring();
 
     void test_element_names();
     void test_element_child();

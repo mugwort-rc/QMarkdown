@@ -1,12 +1,14 @@
 #ifndef PYPP_ELEMENTTREE_HPP
 #define PYPP_ELEMENTTREE_HPP
 
+#include <functional>
 #include <memory>
 
 #include <QList>
 #include <QMap>
 #include <QPair>
 
+#include "../../builtin.hpp"
 #include "../../exceptions.hpp"
 #include "../../str.hpp"
 
@@ -20,6 +22,14 @@ typedef QMap<pypp::str, pypp::str> Namespaces_t;
 typedef QPair<pypp::str, pypp::str> Item_t;
 typedef QList<Item_t> ItemList_t;
 
+inline ItemList_t items(const Namespaces_t &ns)
+{
+    ItemList_t result;
+    for ( const pypp::str &key : ns.keys() ) {
+        result.append(qMakePair(key, ns[key]));
+    }
+    return result;
+}
 
 template <class Impl>
 class SimpleElementPath
@@ -389,19 +399,19 @@ public:
 
     typename ElementList_t::iterator begin()
     {
-        return this->_children.beign();
+        return std::begin(this->_children);
     }
     typename ElementList_t::const_iterator begin() const
     {
-        return this->_children.begin();
+        return std::begin(this->_children);
     }
     typename ElementList_t::iterator end()
     {
-        return this->_children.end();
+        return std::end(this->_children);
     }
     typename ElementList_t::const_iterator end() const
     {
-        return this->_children.end();
+        return std::end(this->_children);
     }
 
 protected:
@@ -475,6 +485,196 @@ private:
 };
 
 typedef ElementTreeImpl<Element> ElementTree;
+
+inline pypp::str escape_cdata(pypp::str text)
+{
+    if ( text.contains("&") ) {
+        text = text.replace("&", "&amp;");
+    }
+    if ( text.contains("<") ) {
+        text = text.replace("<", "&lt;");
+    }
+    if ( text.contains(">") ) {
+        text = text.replace(">", "&gt;");
+    }
+    return text;
+}
+
+inline QByteArray escape_cdata(pypp::str text, const pypp::str &encoding)
+{
+    text = escape_cdata(text);
+    return pypp::encode(text, encoding);
+}
+
+inline pypp::str escape_attrib(pypp::str text)
+{
+    if ( text.contains("&") ) {
+        text = text.replace("&", "&amp;");
+    }
+    if ( text.contains("<") ) {
+        text = text.replace("<", "&lt;");
+    }
+    if ( text.contains(">") ) {
+        text = text.replace(">", "&gt;");
+    }
+    if ( text.contains("\"") ) {
+        text = text.replace("\"", "&quot;");
+    }
+    if ( text.contains("\n") ) {
+        text = text.replace("\n", "&#10;");
+    }
+    return text;
+}
+
+///////////////////////////////////////////////////////////////
+//! serialization support
+
+static Namespaces_t namespace_map = {
+    //! "well-known" namespace prefixes
+    std::make_pair(pypp::str("http://www.w3.org/XML/1998/namespace"), pypp::str("xml")),
+    std::make_pair(pypp::str("http://www.w3.org/1999/xhtml"), pypp::str("html")),
+    std::make_pair(pypp::str("http://www.w3.org/1999/02/22-rdf-syntax-ns#"), pypp::str("rdf")),
+    std::make_pair(pypp::str("http://schemas.xmlsoap.org/wsdl/"), pypp::str("wsdl")),
+    //! xml schema
+    std::make_pair(pypp::str("http://www.w3.org/2001/XMLSchema"), pypp::str("xs")),
+    std::make_pair(pypp::str("http://www.w3.org/2001/XMLSchema-instance"), pypp::str("xsi")),
+    //! dublin core
+    std::make_pair(pypp::str("http://purl.org/dc/elements/1.1/"), pypp::str("dc")),
+};
+
+inline void throw_serialization_error(const std::string &text)
+{
+    throw TypeError("cannot serialize " + text);
+}
+
+//! identify namespaces used in this tree
+template <class ElementPtr>
+std::tuple<Namespaces_t, Namespaces_t> namespaces(const ElementPtr &elem, const pypp::str &default_namespace=pypp::str())
+{
+    Namespaces_t qnames;
+    //! maps qnames to *encoded* prefix:local names
+    qnames[pypp::str()] = pypp::str();
+
+    //! maps uri:s to prefixes
+    Namespaces_t ns;
+    if ( ! default_namespace.isEmpty() ) {
+        ns[default_namespace] = pypp::str();
+    }
+
+    auto add_qname = [&](const pypp::str &qname) {
+        //! calculate serialized qname representation
+        try {
+            if ( qname.startsWith("{") ) {
+                QStringList tmp = qname.mid(1).split("}");
+                pypp::str uri = tmp[0];
+                pypp::str tag = tmp.mid(1).join("}");
+                pypp::str prefix;
+                if ( ns.contains(uri) ) {
+                    prefix = ns[uri];
+                } else {
+                    if ( namespace_map.contains(uri) ) {
+                        prefix = namespace_map[uri];
+                    } else {
+                        prefix = QString("ns%1").arg(ns.size());
+                    }
+                    if ( prefix != "xml" ) {
+                        ns[uri] = prefix;
+                    }
+                }
+                if ( ! prefix.isEmpty() ) {
+                    qnames[qname] = QString("%1:%2").arg(prefix).arg(tag);
+                } else {
+                    qnames[qname] = tag; //! default element
+                }
+            } else {
+                if ( ! default_namespace.isEmpty() ) {
+                    throw ValueError("cannot use non-qualified names with default_namespace option");
+                }
+                qnames[qname] = qname;
+            }
+        } catch (const TypeError &) {
+            throw_serialization_error(qname.toStdString());
+        }
+    };
+
+    //! populate qname and namespaces table
+    for ( const ElementPtr &e : elem->iter() ) {
+        pypp::str tag = e->tag;
+        if ( ! qnames.contains(tag) ) {
+            add_qname(tag);
+        }
+        for ( const Item_t item : e->items() ) {
+            pypp::str key = item.first;
+            if ( ! qnames.contains(key) ) {
+                add_qname(key);
+            }
+        }
+    }
+    return std::make_tuple(qnames, ns);
+}
+
+template <class ElementPtr>
+void serialize_xml(const std::function<void(const pypp::str &)> &write, const ElementPtr &elem, const Namespaces_t &qnames, const Namespaces_t &namespaces)
+{
+    {
+        if ( ! qnames.contains(elem->tag) ) {
+            // tag is None
+            if ( ! elem->text.isEmpty() ) {
+                write(escape_cdata(elem->text));
+            }
+            for ( const ElementPtr &e : (*elem) ) {
+                serialize_xml(write, e, qnames, Namespaces_t());
+            }
+        } else {
+            write("<" + elem->tag);
+            ItemList_t items = elem->items();
+            if ( ! items.isEmpty() || ! namespaces.isEmpty() ) {
+                if ( ! namespaces.isEmpty() ) {
+                    for ( const Item_t &item : pypp::sorted(pypp::xml::etree::items(namespaces), [](const Item_t &lhs, const Item_t &rhs) -> bool { return lhs.second < rhs.second; }) ) {
+                        pypp::str v = item.first;
+                        pypp::str k = item.second;
+                        if ( ! k.isEmpty() ) {
+                            k = ":" + k;
+                        }
+                        write(QString(" xmlns%1=\"%2\"").arg(k).arg(escape_attrib(v)));
+                    }
+                }
+                for (const Item_t &item : pypp::sorted(items, [](const Item_t &lhs, const Item_t &rhs) -> bool { return lhs.first < rhs.first; })) {
+                    pypp::str k = item.first;
+                    pypp::str v = escape_attrib(item.second);
+                    write(QString(" %1=\"%2\"").arg(qnames[k], v));
+                }
+            }
+            if ( ! elem->text.isEmpty() || elem->size() > 0 ) {
+                write(">");
+                if ( ! elem->text.isEmpty() ) {
+                    write(escape_cdata(elem->text));
+                }
+                for (const ElementPtr &e : (*elem)) {
+                    serialize_xml(write, e, qnames, Namespaces_t());
+                }
+                write("</" + elem->tag + ">");
+            } else {
+                write("/>");
+            }
+        }
+    }
+    if ( ! elem->tail.isEmpty() ) {
+        write(escape_cdata(elem->tail));
+    }
+}
+
+template <class ElementPtr>
+pypp::str tostring(const ElementPtr &elem, const pypp::str &default_namespace=pypp::str())
+{
+    Namespaces_t qnames, ns;
+    std::tie(qnames, ns) = namespaces(elem, default_namespace);
+
+    pypp::str result;
+    auto write = [&](const pypp::str &x) { result += x; };
+    serialize_xml(write, elem, qnames, ns);
+    return result;
+}
 
 } // namespace etree
 

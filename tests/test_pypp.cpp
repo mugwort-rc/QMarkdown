@@ -20,6 +20,19 @@ void TestPypp::init()
 void TestPypp::cleanup()
 {}
 
+void TestPypp::test_reversed()
+{
+    QCOMPARE(pypp::reversed(QList<int>({2, 1, 3})), QList<int>({3, 1, 2}));
+}
+
+void TestPypp::test_sorted()
+{
+    QCOMPARE(pypp::sorted(QList<int>({2, 1, 3})), QList<int>({1, 2, 3}));
+    QCOMPARE(pypp::sorted(QList<int>({2, 1, 3}), true), QList<int>({3, 2, 1}));
+    QCOMPARE(pypp::sorted(QList<int>({2, 1, 3}), [](int lhs, int rhs) -> bool { return lhs < rhs; }), QList<int>({1, 2, 3}));
+    QCOMPARE(pypp::sorted(QList<int>({2, 1, 3}), [](int lhs, int rhs) -> bool { return lhs > rhs; }), QList<int>({3, 2, 1}));
+}
+
 void TestPypp::test_slice_end()
 {
     QCOMPARE(pypp::slice(0)(QString("0123456789")), QString());

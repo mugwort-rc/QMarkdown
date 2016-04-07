@@ -32,9 +32,17 @@ void TestEtree::test_Element()
     QCOMPARE(markdown::to_xhtml_string(elem), QString("<elem></elem>"));
 }
 
-void TestEtree::test_toString()
+void TestEtree::test_tostring()
 {
-    //QCOMPARE(this->root.toString(), QString());
+    markdown::Element elem = markdown::createElement("elem");
+    QCOMPARE(pypp::xml::etree::tostring(elem), QString("<elem/>"));
+
+    elem->set("b", "b");
+    elem->set("a", "");
+    QCOMPARE(pypp::xml::etree::tostring(elem), QString("<elem a=\"\" b=\"b\"/>"));
+
+    pypp::xml::etree::SubElement(elem, "child");
+    QCOMPARE(pypp::xml::etree::tostring(elem), QString("<elem a=\"\" b=\"b\"><child/></elem>"));
 }
 
 void TestEtree::test_element_names()

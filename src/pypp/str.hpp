@@ -2,10 +2,31 @@
 #define PYPP_STR_HPP
 
 #include <QString>
+#include <QTextCodec>
+
+#include "./exceptions.hpp"
 
 namespace pypp {
 
 typedef QString str;
+
+inline QByteArray encode(const pypp::str &text, const pypp::str &encoding)
+{
+    QTextCodec *codec = QTextCodec::codecForName(encoding.toUtf8());
+    if ( ! codec ) {
+        throw LookupError();
+    }
+    return codec->fromUnicode(text);
+}
+
+inline pypp::str decode(const QByteArray &bytes, const pypp::str &encoding)
+{
+    QTextCodec *codec = QTextCodec::codecForName(encoding.toUtf8());
+    if ( ! codec ) {
+        throw LookupError();
+    }
+    return codec->toUnicode(bytes);
+}
 
 inline pypp::str expandtabs(const pypp::str &in, int tabsize)
 {
