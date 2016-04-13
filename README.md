@@ -7,9 +7,10 @@ Transplanted from the [Python Markdown][PythonMarkdown].
 ## Required Library
 
 - [Boost][Boost]
+- [Qt5][Qt5]
 
 [Boost]: http://www.boost.org/ "Boost C++ Library"
-[Xerces-C++]: http://xerces.apache.org/ "Apache Xerces Project"
+[Qt5]: http://www.qt.io/ "Qt"
 
 ## License
 
