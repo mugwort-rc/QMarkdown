@@ -77,7 +77,7 @@ void TestBasic::angle_links_and_img()
                 "[link](<http://example.com/(()((())923)(>)\n"
                 "![image](<link(()))(>)\n");
     QCOMPARE(converted,
-             QString(R"(<p><a href="simple%20link" title="title">link</a>)" "\n"
+             QString(R"(<p><a href="simple link" title="title">link</a>)" "\n"
                      R"(<img alt="image" src="http://example.com/image.jpg" />)" "\n"
                      R"(<a href="http://example.com/(()((())923)(">link</a>)" "\n"
                      R"(<img alt="image" src="link(()))(" /></p>)"));

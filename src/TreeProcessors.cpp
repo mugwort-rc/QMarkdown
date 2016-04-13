@@ -299,23 +299,21 @@ private:
                 return std::make_tuple(data, true, leftData.size()+match.capturedStart(match.lastCapturedIndex()));
             }
             if ( ! node->atomic ) {
-                if ( node->size() == 0 || node->hasText() ) {
-                    //! We need to process current node too
-                    ElementList_t nodes = {node};
-                    nodes.append(node->child());
-                    for ( const Element &child : nodes ) {
-                        if ( child->hasText() ) {
-                            QString text = child->text;
-                            if ( ! child->atomic ) {
-                                text = this->handleInline(text, patternIndex+1);
-                            }
-                            child->text = text;
+                //! We need to process current node too
+                ElementList_t nodes = {node};
+                nodes.append(node->child());
+                for ( const Element &child : nodes ) {
+                    if ( child->hasText() ) {
+                        QString text = child->text;
+                        if ( ! child->atomic ) {
+                            text = this->handleInline(text, patternIndex+1);
                         }
-                        if ( child->hasTail() ) {
-                            QString tail = child->tail;
-                            tail = this->handleInline(tail, patternIndex);
-                            child->tail = tail;
-                        }
+                        child->text = text;
+                    }
+                    if ( child->hasTail() ) {
+                        QString tail = child->tail;
+                        tail = this->handleInline(tail, patternIndex);
+                        child->tail = tail;
                     }
                 }
             }
@@ -406,7 +404,7 @@ private:
                             }
                             if ( newChild->hasText() ) {
                                 QString text = newChild->text;
-                                text = handleAttributes(text, element);
+                                text = handleAttributes(text, newChild);
                                 newChild->text = text;
                             }
                         }

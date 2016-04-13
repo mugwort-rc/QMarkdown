@@ -59,7 +59,7 @@ namespace markdown{
  *
  */
 
-QString handleAttributes(const QString &text, Element &parent);
+QString handleAttributes(const QString &text, const Element &parent);
 
 class Markdown;  //!< forward declaration
 

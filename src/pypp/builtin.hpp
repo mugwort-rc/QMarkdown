@@ -7,6 +7,16 @@
 
 namespace pypp {
 
+template <typename T, typename Func>
+inline T map(const Func &func, const T &in)
+{
+    T result;
+    for ( const auto &value : in ) {
+        result.push_back(func(value));
+    }
+    return result;
+}
+
 template <typename T>
 inline T reversed(const T &in)
 {

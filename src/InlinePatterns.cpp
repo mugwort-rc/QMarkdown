@@ -14,7 +14,7 @@
 #if QT_VERSION < QT_VERSION_CHECK(5,0,0)
 #include <QTextDocument>
 #endif
-//#include "htmlentitydefs.hpp"
+#include "htmlentitydefs.hpp"
 
 #include <utility>
 
@@ -36,28 +36,62 @@ const QString BRK = ( "\\[("
         + NOBRACKET + ")\\]" );
 const QString NOIMG = "(?<!\\!)";
 
-const QString BACKTICK_RE = "(?<!\\\\)(`+)(.+?)(?<!`)\\2(?!`)";  //!< `e=f()` or ``e=f("`")``
-const QString ESCAPE_RE = "\\\\(.)";                             //!< \<
-const QString EMPHASIS_RE = "(\\*)([^\\*]+)\\2";                 //!< *emphasis*
-const QString STRONG_RE = "(\\*{2}|_{2})(.+?)\\2";               //!< **strong**
-const QString STRONG_EM_RE = "(\\*{3}|_{3})(.+?)\\2";            //!< ***strong***
-const QString SMART_EMPHASIS_RE = "(?<!\\w)(_)(?!_)(.+?)(?<!_)\\2(?!\\w)";  //!< _smart_emphasis_
-const QString EMPHASIS_2_RE = "(_)(.+?)\\2";                                //!< _emphasis_
+//! `e=f()` or ``e=f("`")``
+const QString BACKTICK_RE = "(?<!\\\\)(`+)(.+?)(?<!`)\\2(?!`)";
+
+//! \<
+const QString ESCAPE_RE = "\\\\(.)";
+
+//! *emphasis*
+const QString EMPHASIS_RE = "(\\*)([^\\*]+)\\2";
+
+//! **strong**
+const QString STRONG_RE = "(\\*{2}|_{2})(.+?)\\2";
+
+//! ***strongem*** or ***em*strong**
+const QString EM_STRONG_RE = "(\\*|_)\\2{2}(.+?)\\2(.*?)\\2{2}";
+
+//! ***strong**em*
+const QString STRONG_EM_RE = "(\\*|_)\\2{2}(.+?)\\2{2}(.*?)\\2";
+
+//! _smart_emphasis_
+const QString SMART_EMPHASIS_RE = "(?<!\\w)(_)(?!_)(.+?)(?<!_)\\2(?!\\w)";
+
+//! _emphasis_
+const QString EMPHASIS_2_RE = "(_)(.+?)\\2";
+
+//! [text](url) or [text](<url>) or [text](url "title")
 const QString LINK_RE = NOIMG + BRK + "\\(\\s*(<.*?>|((?:(?:\\(.*?\\))|[^\\(\\)]))*?)\\s*((['\"])(.*?)\\12\\s*)?\\)";
-//!< [text](url) or [text](<url>) or [text](url "title")
 
-const QString IMAGE_LINK_RE = "\\!" + BRK + "\\s*\\((<.*?>|([^\\)]*))\\)";
-//!< ![alttxt](http://x.com/) or ![alttxt](<http://x.com/>)
-const QString REFERENCE_RE = NOIMG + BRK + "\\s?\\[([^\\]]*)\\]";           //!< [Google][3]
-const QString SHORT_REF_RE = NOIMG + "\\[([^\\]]+)\\]";                    //!< [Google]
-const QString IMAGE_REFERENCE_RE = "\\!" + BRK + "\\s?\\[([^\\]]*)\\]";   //!< ![alt text][2]
-const QString NOT_STRONG_RE = "((^| )(\\*|_)( |$))";                       //!< stand-alone * or _
-const QString AUTOLINK_RE = "<((?:[Ff]|[Hh][Tt])[Tt][Pp][Ss]?://[^>]*)>";  //!<  <http://www.123.com>
-const QString AUTOMAIL_RE = "<([^> \\!]*@[^> ]*)>";                        //!< <me@example.com>
+//! ![alttxt](http://x.com/) or ![alttxt](<http://x.com/>)
+const QString IMAGE_LINK_RE = "\\!" + BRK + "\\s*\\((<.*?>|([^\")]+\"[^\"]*\"|[^\\)]*))\\)";
 
-const QString HTML_RE = "(<([a-zA-Z/][^>]*?|\\!--.*?--)>)";          //!< <...>
-const QString ENTITY_RE = "(&[\\#a-zA-Z0-9]*;)";                           //!< &amp;
-const QString LINE_BREAK_RE = "  \\n";                                     //!< two spaces at end of line
+//! [Google][3]
+const QString REFERENCE_RE = NOIMG + BRK + "\\s?\\[([^\\]]*)\\]";
+
+//! [Google]
+const QString SHORT_REF_RE = NOIMG + "\\[([^\\]]+)\\]";
+
+//! ![alt text][2]
+const QString IMAGE_REFERENCE_RE = "\\!" + BRK + "\\s?\\[([^\\]]*)\\]";
+
+//! stand-alone * or _
+const QString NOT_STRONG_RE = "((^| )(\\*|_)( |$))";
+
+//!  <http://www.123.com>
+const QString AUTOLINK_RE = "<((?:[Ff]|[Hh][Tt])[Tt][Pp][Ss]?://[^>]*)>";
+
+//! <me@example.com>
+const QString AUTOMAIL_RE = "<([^> \\!]*@[^> ]*)>";
+
+//! <...>
+const QString HTML_RE = "(<([a-zA-Z/][^>]*?|\\!--.*?--)>)";
+
+//! &amp;
+const QString ENTITY_RE = "(&[\\#a-zA-Z0-9]*;)";
+
+//! two spaces at end of line
+const QString LINE_BREAK_RE = "  \\n";
 
 //! Remove quotes from around a string.
 QString dequote(const QString &string)
@@ -85,11 +119,11 @@ QString itertext(const Element &elem)
 
 const QRegularExpression ATTR_RE("\\{@([^\\}]*)=([^\\}]*)\\}");
 
-QString handleAttributes(const QString &text, Element &parent)
+QString handleAttributes(const QString &text, const Element &parent)
 {
     return pypp::re::sub(ATTR_RE, [&](const QRegularExpressionMatch &m) -> QString {
         parent->set(m.captured(1), m.captured(2).replace("\n",  " "));
-        return m.captured();
+        return pypp::str();
     }, text);
 }
 
@@ -171,7 +205,7 @@ public:
         if ( this->markdown.lock()->ESCAPED_CHARS.contains(ch) ) {
             return QString("%1%2%3").arg(util::STX).arg(ch.unicode()).arg(util::ETX);
         } else {
-            return QString("\\%1").arg(text);
+            return boost::none;
         }
     }
 
@@ -275,6 +309,9 @@ public:
         Element el1 = createElement(tags.at(0));
         Element el2 = createSubElement(el1, tags.at(1));
         el2->text = m.captured(3);
+        if ( ! m.captured(4).isEmpty() ) {
+            el2->tail = m.captured(4);
+        }
         return el1;
     }
 
@@ -380,7 +417,7 @@ public:
      */
     QString sanitize_url(QString url)
     {
-        QString result = url.replace(" ", "%20");
+        QString result = url;
         if ( ! this->markdown.lock()->safeMode() ) {
             //! Return immediately bipassing parsing.
             return result;
@@ -460,7 +497,7 @@ public:
 
         Element el = createElement("img");
         QString src_parts_source = m.captured(9);
-        QStringList src_parts = src_parts_source.split(" ");
+        QStringList src_parts = pypp::split(src_parts_source);
         if ( ! src_parts.isEmpty() ) {
             QString src = src_parts.at(0);
             if ( src.startsWith('<') && src.endsWith('>') ) {
@@ -622,13 +659,17 @@ public:
             email = email.mid(7);
         }
 
-        //! html escape
-# if QT_VERSION < QT_VERSION_CHECK(5,0,0)
-        QString letters = Qt::escape(email);
-# else
-        QString letters = email.toHtmlEscaped();
-# endif
-        //! code escape
+        QString letters;
+        for ( const QChar &ch : email ) {
+            if ( codepoint2name.contains(ch) ) {
+                letters += QString("%1%2;").arg(util::AMP_SUBSTITUTE).arg(codepoint2name[ch]);
+            } else {
+                letters += QString("%1#%2;").arg(util::AMP_SUBSTITUTE).arg(QString::number(ch.unicode()));
+            }
+        }
+        el->text = letters;
+        el->atomic = true;
+
         QString mailto = "mailto:"+email;
         QString buff;
         for ( int i = 0; i < mailto.size(); ++i ) {
@@ -638,8 +679,6 @@ public:
         mailto = buff;
 
         el->set("href", this->unescape(mailto));
-        el->text = letters;
-        el->atomic = true;
         return el;
     }
 
@@ -666,7 +705,8 @@ OrderedDictPatterns build_inlinepatterns(const std::shared_ptr<Markdown> &md_ins
     }
     inlinePatterns.append("entity", std::shared_ptr<Pattern>(new HtmlPattern(ENTITY_RE, md_instance)));
     inlinePatterns.append("not_strong", std::shared_ptr<Pattern>(new SimpleTextPattern(NOT_STRONG_RE)));
-    inlinePatterns.append("strong_em", std::shared_ptr<Pattern>(new DoubleTagPattern(STRONG_EM_RE, "strong,em")));
+    inlinePatterns.append("em_strong", std::shared_ptr<Pattern>(new DoubleTagPattern(EM_STRONG_RE, "strong,em")));
+    inlinePatterns.append("strong_em", std::shared_ptr<Pattern>(new DoubleTagPattern(STRONG_EM_RE, "em,strong")));
     inlinePatterns.append("strong", std::shared_ptr<Pattern>(new SimpleTagPattern(STRONG_RE, "strong")));
     inlinePatterns.append("emphasis", std::shared_ptr<Pattern>(new SimpleTagPattern(EMPHASIS_RE, "em")));
     if ( md_instance->smart_emphasis() ) {

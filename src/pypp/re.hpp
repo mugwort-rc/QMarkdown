@@ -11,6 +11,20 @@ namespace pypp {
 
 namespace re {
 
+inline pypp::str escape(const pypp::str &string)
+{
+    pypp::str result;
+    for ( const QChar &ch : string ) {
+        if ( ch.isLetterOrNumber() || ch == '_' ) {
+            result += ch;
+        } else {
+            result += '\\';
+            result += ch;
+        }
+    }
+    return result;
+}
+
 inline pypp::str sub(const QRegularExpression &pattern, const std::function<pypp::str(const QRegularExpressionMatch &)> &repl, const pypp::str &string)
 {
     QStringList temp;

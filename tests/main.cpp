@@ -5,6 +5,7 @@
 #include "test_etree.h"
 #include "test_apis.h"
 #include "test_basic.h"
+#include "test_misc.h"
 
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
@@ -22,6 +23,7 @@ int main(int argc, char *argv[]) {
         Test(new TestInlinePattern()),
         Test(new TestTreeProcessor()),
         Test(new TestBasic()),
+        Test(new TestMISC()),
     };
 
     for ( QSharedPointer<QObject> &test : tests ) {

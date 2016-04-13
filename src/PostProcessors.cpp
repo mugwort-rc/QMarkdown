@@ -36,7 +36,7 @@ public:
     {
         std::shared_ptr<Markdown> markdown = this->markdown.lock();
 
-        QString result = text;
+        OrderedDict<QString> replacements;
         for ( int i = 0; i < markdown->htmlStash.html_counter; ++i ) {
             HtmlStash::Item item = markdown->htmlStash.rawHtmlBlocks[i];
             QString html = item.first;
@@ -51,9 +51,16 @@ public:
                 }
             }
             if ( this->isblocklevel(html) && ( safe || ! markdown->safeMode() ) ) {
-                result = result.replace(QString("<p>%1</p>").arg(markdown->htmlStash.get_placeholder(i)), html+"\n");
+                replacements[QString("<p>%1</p>").arg(markdown->htmlStash.get_placeholder(i))] = html+"\n";
             }
-            result = result.replace(markdown->htmlStash.get_placeholder(i), html);
+            replacements[markdown->htmlStash.get_placeholder(i)] = html;
+        }
+        QString result = text;
+        if ( replacements.size() > 0 ) {
+            pypp::str pattern = pypp::map(pypp::re::escape, replacements.keys()).join("|");
+            result = pypp::re::sub(QRegularExpression(pattern), [&](const QRegularExpressionMatch &m) -> pypp::str {
+                return replacements[m.captured()];
+            }, result);
         }
         return result;
     }

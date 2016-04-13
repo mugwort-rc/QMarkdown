@@ -130,7 +130,7 @@ public:
 					}
 
                     QChar ch = block[1];
-                    if ( ! util::isBlockLevel(left_tag) || ( ch == '!' || ch == '?' || ch == '@' || ch == '%' ) ) {
+                    if ( ! (util::isBlockLevel(left_tag) || ( ch == '!' || ch == '?' || ch == '@' || ch == '%' )) ) {
 						new_blocks.push_back(block);
 						continue;
 					}
@@ -156,9 +156,7 @@ public:
 						continue;
 					} else {
 						//! if is block level tag and is not complete
-
-                        QString buff = pypp::rstrip(block);
-                        if ( ( util::isBlockLevel(left_tag) || left_tag == "--" ) && ! buff.endsWith('>') ) {
+                        if ( ( ! this->equal_tags(left_tag, right_tag) ) && ( util::isBlockLevel(left_tag) || left_tag == "--" ) ) {
                             items.push_back(block.trimmed());
 							in_tag = true;
 						} else {
@@ -198,7 +196,7 @@ public:
 						}
                         new_blocks.push_back(markdown->htmlStash.store(end));
 					} else {
-                        new_blocks.push_back(items.join("\n\n"));
+                        new_blocks.push_back(markdown->htmlStash.store(items.join("\n\n")));
 					}
                     items = QStringList();
 				}
@@ -217,7 +215,7 @@ public:
 				}
                 new_blocks.push_back(markdown->htmlStash.store(end));
 			} else {
-                new_blocks.push_back(items.join("\n\n"));
+                new_blocks.push_back(markdown->htmlStash.store(items.join("\n\n")));
             }
             new_blocks.push_back("\n");
 		}
@@ -371,7 +369,7 @@ public:
 						break;
 					}
 				}
-                if ( ! ( m.captured(5).size() > 0 || m.captured(6).size() > 0 || m.captured(7).size() > 0 ) ) {
+                if ( t.isEmpty() ) {
 					//! Check next line for title
                     QRegularExpressionMatch tm = this->TITLE_RE.match(buffer.front());
                     if ( tm.hasMatch() ) {

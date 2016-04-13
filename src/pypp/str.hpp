@@ -1,6 +1,7 @@
 #ifndef PYPP_STR_HPP
 #define PYPP_STR_HPP
 
+#include <QRegularExpression>
 #include <QString>
 #include <QTextCodec>
 
@@ -48,6 +49,11 @@ inline pypp::str expandtabs(const pypp::str &in, int tabsize)
         }
     }
     return result;
+}
+
+inline QStringList split(const pypp::str &in)
+{
+    return in.split(QRegularExpression("\\s"));
 }
 
 inline pypp::str lstrip(const pypp::str &in)
