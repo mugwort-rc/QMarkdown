@@ -16,10 +16,10 @@
 
 namespace markdown{
 
-Markdown::Markdown(void) :
+Markdown::Markdown(const safe_mode_type &safe_mode) :
     _doc_tag("div"),
     _html_replacement_text("[HTML_REMOVED]"), _tab_length(4), _enable_attributes(true), _smart_emphasis(true), _lazy_ol(true),
-	_safeMode(default_mode),
+    _safeMode(safe_mode),
     //todo
     stripTopLevelTags(true),
 
@@ -160,9 +160,9 @@ Markdown &Markdown::convertFile(/*input, output, encoding=L"utf-8"*/)
     return *this;
 }
 
-std::shared_ptr<Markdown> create_Markdown()
+std::shared_ptr<Markdown> create_Markdown(const Markdown::safe_mode_type &safe_mode)
 {
-    std::shared_ptr<Markdown> result = std::make_shared<Markdown>();
+    std::shared_ptr<Markdown> result = std::make_shared<Markdown>(safe_mode);
     result->initialize();
     return result;
 }

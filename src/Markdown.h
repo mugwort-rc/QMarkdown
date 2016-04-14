@@ -113,7 +113,7 @@ public:
      * * lazy_ol: Ignore number of first item of ordered lists. Default: True
      *
      */
-    Markdown(void);
+    Markdown(const safe_mode_type &safe_mode=default_mode);
 
     void initialize();
     void initialize(const Extensions &extensions);
@@ -259,7 +259,7 @@ public:
 
 };
 
-std::shared_ptr<Markdown> create_Markdown();
+std::shared_ptr<Markdown> create_Markdown(const Markdown::safe_mode_type &safe_mode=Markdown::default_mode);
 std::shared_ptr<Markdown> create_Markdown(const Markdown::Extensions &extensions);
 
 } // end of namespace markdown

@@ -503,7 +503,7 @@ public:
             if ( src.startsWith('<') && src.endsWith('>') ) {
                 src = src.mid(1, src.size()-2);
             }
-            el->set("src", src);
+            el->set("src", this->sanitize_url(src));
         } else {
             el->set("src", QString());
         }

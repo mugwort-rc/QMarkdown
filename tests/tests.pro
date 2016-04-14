@@ -11,14 +11,16 @@ SOURCES += \
     test_etree.cpp \
     test_pypp.cpp \
     test_basic.cpp \
-    test_misc.cpp
+    test_misc.cpp \
+    test_safemode.cpp
 
 HEADERS += \
     test_apis.h \
     test_etree.h \
     test_pypp.h \
     test_basic.h \
-    test_misc.h
+    test_misc.h \
+    test_safemode.h
 
 INCLUDEPATH += ../src/
 

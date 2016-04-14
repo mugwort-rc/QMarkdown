@@ -6,6 +6,7 @@
 #include "test_apis.h"
 #include "test_basic.h"
 #include "test_misc.h"
+#include "test_safemode.h"
 
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
@@ -24,6 +25,7 @@ int main(int argc, char *argv[]) {
         Test(new TestTreeProcessor()),
         Test(new TestBasic()),
         Test(new TestMISC()),
+        Test(new TestSafeMode()),
     };
 
     for ( QSharedPointer<QObject> &test : tests ) {
