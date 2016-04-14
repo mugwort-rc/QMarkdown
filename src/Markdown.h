@@ -84,7 +84,10 @@ public:
         xhtml5
     } output_formats;
 
-public:
+    friend std::shared_ptr<Markdown> create_Markdown(const safe_mode_type &);
+    friend std::shared_ptr<Markdown> create_Markdown(const Extensions &);
+
+protected:
     /*!
      * Creates a new Markdown instance.
      *
@@ -115,6 +118,7 @@ public:
      */
     Markdown(const safe_mode_type &safe_mode=default_mode);
 
+public:
     void initialize();
     void initialize(const Extensions &extensions);
 
@@ -212,7 +216,7 @@ public:
 	bool smart_emphasis(void) const
 	{ return this->_smart_emphasis; }
 	void set_smart_emphasis(bool smart_emphasis)
-	{ this->_smart_emphasis = smart_emphasis; }
+    { this->_smart_emphasis = smart_emphasis; this->initialize(); }
 
 	bool lazy_ol(void) const
 	{ return this->_lazy_ol; }

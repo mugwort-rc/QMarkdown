@@ -12,7 +12,8 @@ SOURCES += \
     test_pypp.cpp \
     test_basic.cpp \
     test_misc.cpp \
-    test_safemode.cpp
+    test_safemode.cpp \
+    test_options.cpp
 
 HEADERS += \
     test_apis.h \
@@ -20,7 +21,8 @@ HEADERS += \
     test_pypp.h \
     test_basic.h \
     test_misc.h \
-    test_safemode.h
+    test_safemode.h \
+    test_options.h
 
 INCLUDEPATH += ../src/
 

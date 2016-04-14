@@ -43,23 +43,19 @@ Markdown::Markdown(const safe_mode_type &safe_mode) :
 
 void Markdown::initialize()
 {
-    if ( ! this->initialized ) {
-        this->build_parser();
-        this->set_output_format();
-        this->reset();
-        this->initialized = true;
-    }
+    this->build_parser();
+    this->set_output_format();
+    this->reset();
+    this->initialized = true;
 }
 
 void Markdown::initialize(const Extensions &extensions)
 {
-    if ( ! this->initialized ) {
-        this->build_parser();
-        this->set_output_format();
-        this->registerExtensions(extensions);
-        this->reset();
-        this->initialized = true;
-    }
+    this->build_parser();
+    this->set_output_format();
+    this->registerExtensions(extensions);
+    this->reset();
+    this->initialized = true;
 }
 
 std::shared_ptr<Markdown> Markdown::build_parser(void)
@@ -162,14 +158,14 @@ Markdown &Markdown::convertFile(/*input, output, encoding=L"utf-8"*/)
 
 std::shared_ptr<Markdown> create_Markdown(const Markdown::safe_mode_type &safe_mode)
 {
-    std::shared_ptr<Markdown> result = std::make_shared<Markdown>(safe_mode);
+    std::shared_ptr<Markdown> result(new Markdown(safe_mode));
     result->initialize();
     return result;
 }
 
 std::shared_ptr<Markdown> create_Markdown(const Markdown::Extensions &extensions)
 {
-    std::shared_ptr<Markdown> result = std::make_shared<Markdown>();
+    std::shared_ptr<Markdown> result(new Markdown());
     result->initialize(extensions);
     return result;
 }
