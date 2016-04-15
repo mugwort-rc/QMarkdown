@@ -22,7 +22,9 @@ HEADERS += \
     $$PWD/pypp/exceptions.hpp \
     $$PWD/pypp/slice.hpp \
     $$PWD/ElementTree.hpp \
-    $$PWD/pypp/xml/etree/elementtree.hpp
+    $$PWD/pypp/xml/etree/elementtree.hpp \
+    $$PWD/InlinePatterns/BacktickPattern.h \
+    $$PWD/InlinePatterns/common.h
 
 SOURCES += \
     $$PWD/BlockParser.cpp \
@@ -35,4 +37,6 @@ SOURCES += \
     $$PWD/TreeProcessors.cpp \
     $$PWD/util.cpp \
     $$PWD/extensions/Extension.cpp \
-    $$PWD/extensions/tables.cpp
+    $$PWD/extensions/tables.cpp \
+    $$PWD/InlinePatterns/BacktickPattern.cpp \
+    $$PWD/InlinePatterns/common.cpp

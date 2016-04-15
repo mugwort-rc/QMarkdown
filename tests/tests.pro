@@ -13,7 +13,8 @@ SOURCES += \
     test_basic.cpp \
     test_misc.cpp \
     test_safemode.cpp \
-    test_options.cpp
+    test_options.cpp \
+    test_extensions.cpp
 
 HEADERS += \
     test_apis.h \
@@ -22,7 +23,8 @@ HEADERS += \
     test_basic.h \
     test_misc.h \
     test_safemode.h \
-    test_options.h
+    test_options.h \
+    test_extensions.h
 
 INCLUDEPATH += ../src/
 

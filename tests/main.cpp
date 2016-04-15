@@ -8,6 +8,7 @@
 #include "test_misc.h"
 #include "test_safemode.h"
 #include "test_options.h"
+#include "test_extensions.h"
 
 int main(int argc, char *argv[]) {
     QCoreApplication app(argc, argv);
@@ -28,6 +29,7 @@ int main(int argc, char *argv[]) {
         Test(new TestMISC()),
         Test(new TestSafeMode()),
         Test(new TestOptions()),
+        Test(new TestExtensions()),
     };
 
     for ( QSharedPointer<QObject> &test : tests ) {

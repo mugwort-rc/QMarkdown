@@ -14,7 +14,12 @@
 #include "../BlockParser.h"
 #include "../BlockProcessors.h"
 
+#include "../InlinePatterns/common.h"
+#include "../InlinePatterns/BacktickPattern.h"
+
 namespace markdown{
+
+extern const QString BACKTICK_RE;
 
 /*!
  * Process Tables.
@@ -30,10 +35,10 @@ public:
     bool test(const Element &, const QString &block)
     {
         QStringList rows = block.split("\n");
-        return rows.size() > 2
-                && rows[0].contains(L'|')
-                && rows[1].contains(L'|')
-                && rows[1].contains(L'-')
+        return rows.size() > 1
+                && rows[0].contains('|')
+                && rows[1].contains('|')
+                && rows[1].contains('-')
                 && this->CHECK_CHARS.contains(rows[1].trimmed().at(0));
     }
 
@@ -48,16 +53,12 @@ public:
         QString header = block[0].trimmed();
         QString separator = block[1].trimmed();
         QStringList rows;
-        int counter = 0;
-        for ( const QString &row : block ) {
-            if ( ++counter < 3 ) {
-                continue;
-            }
-            rows.push_back(row);
+        if ( block.size() >= 3 ) {
+            rows = block.mid(2);
         }
         //! Get format type (bordered by pipes or not)
         bool border = false;
-        if ( header.at(0) == '|' ) {
+        if ( header.startsWith('|') ) {
             border = true;
         }
         //! Get alignment of columns
@@ -97,8 +98,8 @@ private:
         QStringList cells = this->split_row(row, border);
         //! We use align here rather than cells to ensure every row
         //! contains the same number of columns.
-        int i = 0;
-        for ( boost::optional<QString> a : align ) {
+        for ( int i = 0; i < align.size(); ++i ) {
+            boost::optional<QString> a = align.at(i);
             Element c = createSubElement(tr, tag);
             if ( cells.size() > i ) {
                 QString cell = cells.at(i).trimmed();
@@ -109,7 +110,6 @@ private:
             if ( a ) {
                 c->set("align", *a);
             }
-            ++i;
         }
     }
     /*!
@@ -126,7 +126,57 @@ private:
                 tmp = tmp.left(tmp.size()-1);
             }
         }
-        return tmp.split("|");
+        return this->split(tmp, '|');
+    }
+
+    /*!
+     * split a row of text with some code into a list of cells.
+     */
+    QStringList split(const QString &row, const QChar &marker)
+    {
+        if ( this->row_has_unpaired_backticks(row) ) {
+            //! fallback on old behaviour
+            return row.split(marker);
+        }
+        //! modify the backtick pattern to only match at the beginning of the search string
+        std::shared_ptr<Pattern> backtick_pattern = std::shared_ptr<Pattern>(new BacktickPattern("^" + BACKTICK_RE));
+        QStringList elements;
+        QString current;
+        for ( int i = 0; i < row.size(); ) {
+            QChar letter = row.at(i);
+            if ( letter == marker ) {
+                if ( ! current.isEmpty() || elements.size() == 0 ) {
+                    //! Don't append empty string unless it is the first element
+                    //! The border is already removed when we get the row, then the line is strip()'d
+                    //! If the first element is a marker, then we have an empty first cell
+                    elements.append(current);
+                }
+                current.clear();
+            } else {
+                QRegularExpressionMatch match = backtick_pattern->getCompiledRegExp().match(row.mid(i));
+                if ( ! match.hasMatch() ) {
+                    current += letter;
+                } else {
+                    QString delim = match.captured(2);  //! the code block delimeter (ie 1 or more backticks)
+                    QString row_contents = match.captured(3);  //! the text contained inside the code block
+                    i += match.capturedStart(4) - 1;  //! jump pointer to the beginning of the rest of the text (group #4)
+                    current += delim + row_contents + delim;  //! reinstert backticks
+                }
+            }
+            ++i;
+        }
+        elements.append(current);
+        return elements;
+    }
+
+    bool row_has_unpaired_backticks(const QString &row)
+    {
+        int count_total_backtick = row.count('`');
+        int count_escaped_backtick = row.count("\\`");
+        int count_backtick = count_total_backtick - count_escaped_backtick;
+        //! odd number of backticks,
+        //! we won't be able to build correct code blocks
+        return bool(count_backtick & 1);
     }
 
 private:
