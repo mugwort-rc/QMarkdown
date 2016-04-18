@@ -16,15 +16,6 @@
 
 namespace markdown{
 
-class PreProcessor : public Processor
-{
-public:
-    using Processor::Processor;
-
-	virtual ~PreProcessor(void)
-	{}
-};
-
 /*!
  * Normalize whitespace for consistant parsing.
  */

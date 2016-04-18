@@ -24,7 +24,12 @@ HEADERS += \
     $$PWD/ElementTree.hpp \
     $$PWD/pypp/xml/etree/elementtree.hpp \
     $$PWD/InlinePatterns/BacktickPattern.h \
-    $$PWD/InlinePatterns/common.h
+    $$PWD/InlinePatterns/common.h \
+    $$PWD/extensions/attr_list.h \
+    $$PWD/extensions/abbr.h \
+    $$PWD/extensions/admonition.h \
+    $$PWD/extensions/def_list.h \
+    $$PWD/BlockProcessors/ListIndentProcessor.h
 
 SOURCES += \
     $$PWD/BlockParser.cpp \
@@ -39,4 +44,9 @@ SOURCES += \
     $$PWD/extensions/Extension.cpp \
     $$PWD/extensions/tables.cpp \
     $$PWD/InlinePatterns/BacktickPattern.cpp \
-    $$PWD/InlinePatterns/common.cpp
+    $$PWD/InlinePatterns/common.cpp \
+    $$PWD/extensions/attr_list.cpp \
+    $$PWD/extensions/abbr.cpp \
+    $$PWD/extensions/admonition.cpp \
+    $$PWD/extensions/def_list.cpp \
+    $$PWD/BlockProcessors/ListIndentProcessor.cpp

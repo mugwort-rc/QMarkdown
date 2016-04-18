@@ -19,8 +19,6 @@
 
 namespace markdown{
 
-extern const QString BACKTICK_RE;
-
 /*!
  * Process Tables.
  */
@@ -45,7 +43,7 @@ public:
     /*!
      * Parse a table block and build table.
      */
-    void run(const Element &parent, QStringList &blocks)
+    bool run(const Element &parent, QStringList &blocks)
     {
         QString blocksTmp = blocks.front();
         blocks.pop_front();
@@ -82,6 +80,7 @@ public:
         for ( const QString &row : rows ) {
             this->build_row(row.trimmed(), tbody, align, border);
         }
+        return true;
     }
 
 private:

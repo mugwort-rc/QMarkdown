@@ -14,14 +14,16 @@
  *
  * Added parsing of tables to Python-Markdown.
  *
- * A simple example:
+ * See <https://pythonhosted.org/Markdown/extensions/tables.html>
+ * for documentation.
  *
- *    First Header  | Second Header
- *    ------------- | -------------
- *    Content Cell  | Content Cell
- *    Content Cell  | Content Cell
+ * Original code Copyright 2009 [Waylan Limberg](http://achinghead.com)
  *
- * Copyright 2009 - [Waylan Limberg](http://achinghead.com)
+ * Python-Markdown Copyright 2008-2014 The Python Markdown Project
+ *
+ * All changes Copyright 2016 mugwort_rc
+ *
+ * License: [BSD](http://www.opensource.org/licenses/bsd-license.php)
  */
 
 #include "Extension.h"

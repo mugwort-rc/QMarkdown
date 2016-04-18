@@ -19,8 +19,14 @@ private slots:
     void init();
     void cleanup();
 
+    void admonition();
+    void attr_list();
+
     // extra
+    void abbr();
+    void def_in_list();
     void tables();
+    void tables_and_attr_list();
 
 };
 

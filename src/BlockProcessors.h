@@ -80,7 +80,7 @@ public:
 	 *   * ``parent``: A etree element which is the parent of the current block.
 	 *   * ``blocks``: A list of all remaining blocks of the document.
 	 */
-    virtual void run(const Element &parent, QStringList &block) = 0;
+    virtual bool run(const Element &parent, QStringList &blocks) = 0;
 
 protected:
     std::weak_ptr<BlockParser> parser;

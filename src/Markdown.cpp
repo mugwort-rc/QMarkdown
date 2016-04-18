@@ -68,35 +68,36 @@ std::shared_ptr<Markdown> Markdown::build_parser(void)
     return this->shared_from_this();
 }
 
-Markdown &Markdown::registerExtensions(const Extensions &extensions/*, configs*/)
+std::shared_ptr<Markdown> Markdown::registerExtensions(const Extensions &extensions/*, configs*/)
 {
     for ( const Extension::Ptr &ext : extensions ) {
         ext->extendMarkdown(this->shared_from_this());
     }
-	return *this;
+    return this->shared_from_this();
 }
 
-Markdown &Markdown::registerExtension(const Extension::Ptr &)
+std::shared_ptr<Markdown> Markdown::registerExtension(const Extension::Ptr &extension)
 {
-	return *this;
+    this->registeredExtensions.append(extension);
+    return this->shared_from_this();
 }
 
-Markdown &Markdown::reset(void)
+std::shared_ptr<Markdown> Markdown::reset(void)
 {
     this->htmlStash.reset();
     this->references.clear();
     //! TODO: extension
-	return *this;
+    return this->shared_from_this();
 }
 
-Markdown &Markdown::set_output_format(const output_formats format)
+std::shared_ptr<Markdown> Markdown::set_output_format(const output_formats format)
 {
     if ( format == html || format == html4 || format == html5 ) {
         this->serializer = to_html_string;
     } else if ( format == xhtml || format == xhtml1 || format == xhtml5 ) {
         this->serializer = to_xhtml_string;
     }
-	return *this;
+    return this->shared_from_this();
 }
 
 QString Markdown::convert(const QString &source)
@@ -151,9 +152,9 @@ QString Markdown::convert(const QString &source)
     return output.trimmed();
 }
 
-Markdown &Markdown::convertFile(/*input, output, encoding=L"utf-8"*/)
+std::shared_ptr<Markdown> Markdown::convertFile(/*input, output, encoding=L"utf-8"*/)
 {
-    return *this;
+    return this->shared_from_this();
 }
 
 std::shared_ptr<Markdown> create_Markdown(const Markdown::safe_mode_type &safe_mode)

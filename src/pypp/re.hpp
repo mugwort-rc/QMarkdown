@@ -43,6 +43,11 @@ inline pypp::str sub(const QRegularExpression &pattern, const std::function<pypp
     return temp.join(QString());
 }
 
+inline pypp::str sub(const QRegularExpression &pattern, const QString &repl, const pypp::str &string)
+{
+    return sub(pattern, [repl](const QRegularExpressionMatch) -> pypp::str { return repl; }, string);
+}
+
 } // namespace re
 
 } // namespace pypp

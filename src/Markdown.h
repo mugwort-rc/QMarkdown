@@ -136,19 +136,19 @@ public:
      * * configs: A dictionary mapping module names to config options.
      *
      */
-    Markdown &registerExtensions(const Extensions &extensions/*, configs*/);
+    std::shared_ptr<Markdown> registerExtensions(const Extensions &extensions/*, configs*/);
     /*!
      * This gets called by the extension
      */
-    Markdown &registerExtension(const Extension::Ptr &extension);
+    std::shared_ptr<Markdown> registerExtension(const Extension::Ptr &extension);
     /*!
      * Resets all state variables so that we can start with a new text.
      */
-    Markdown &reset(void);
+    std::shared_ptr<Markdown> reset(void);
     /*!
      * Set the output format for the class instance.
      */
-    Markdown &set_output_format(const output_formats format=xhtml1);
+    std::shared_ptr<Markdown> set_output_format(const output_formats format=xhtml1);
     /*!
      * Convert markdown to serialized XHTML or HTML.
      *
@@ -190,7 +190,7 @@ public:
      * * encoding: Encoding of input and output files. Defaults to utf-8.
      *
      */
-    Markdown &convertFile(/*input, output, encoding="utf-8"*/);
+    std::shared_ptr<Markdown> convertFile(/*input, output, encoding="utf-8"*/);
 
 public:
     QString doc_tag(void) const
@@ -256,6 +256,7 @@ public:
     OrderedDictTreeProcessors treeprocessors;
     OrderedDictPostProcessors postprocessors;
 
+    QList<Extension::Ptr> registeredExtensions;
     Reference references;
 	HtmlStash htmlStash;
 

@@ -29,6 +29,11 @@ inline pypp::str decode(const QByteArray &bytes, const pypp::str &encoding)
     return codec->toUnicode(bytes);
 }
 
+inline pypp::str capitalize(const pypp::str &in)
+{
+    return pypp::str(in.at(0).toUpper()) + in.mid(1);
+}
+
 inline pypp::str expandtabs(const pypp::str &in, int tabsize)
 {
     pypp::str result;
@@ -94,6 +99,23 @@ inline pypp::str rstrip(const pypp::str &in, const std::function<bool(const QCha
         }
     }
     return pypp::str();
+}
+
+inline pypp::str lstrip(const pypp::str &in, const pypp::str &chars)
+{
+    auto removeChars = [chars](const QChar &ch) -> bool { return QString(ch) == chars; };
+    return lstrip(in, removeChars);
+}
+
+inline pypp::str rstrip(const pypp::str &in, const pypp::str &chars)
+{
+    auto removeChars = [chars](const QChar &ch) -> bool { return QString(ch) == chars; };
+    return rstrip(in, removeChars);
+}
+
+inline pypp::str strip(const pypp::str &in, const pypp::str &chars)
+{
+    return rstrip(lstrip(in, chars), chars);
 }
 
 } // namespace pypp

@@ -36,9 +36,11 @@ void BlockParser::parseBlocks(const Element &parent, QStringList &blocks)
 {
 	while ( blocks.size() > 0 ) {
         for (OrderedDictBlockProcessors::ValueType processor : this->blockprocessors.toList()) {
-			if ( processor->test(parent, blocks.front()) ) {
-				processor->run(parent, blocks);
-				break;
+            if ( processor->test(parent, blocks.front()) ) {
+                if ( processor->run(parent, blocks) ) {
+                    //! run returns True
+                    break;
+                }
 			}
 		}
 	}
