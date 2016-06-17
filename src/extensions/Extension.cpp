@@ -7,6 +7,8 @@
 
 #include "Extension.h"
 
+#include <QStringList>
+
 namespace  markdown {
 
 Extension::Extension(const Config &config) :

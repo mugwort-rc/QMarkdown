@@ -567,7 +567,7 @@ std::tuple<Namespaces_t, Namespaces_t> namespaces(const ElementPtr &elem, const 
             if ( qname.startsWith("{") ) {
                 QStringList tmp = qname.mid(1).split("}");
                 pypp::str uri = tmp[0];
-                pypp::str tag = tmp.mid(1).join("}");
+                pypp::str tag = QStringList(tmp.mid(1)).join("}");
                 pypp::str prefix;
                 if ( ns.contains(uri) ) {
                     prefix = ns[uri];
