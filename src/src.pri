@@ -36,6 +36,7 @@ HEADERS += \
     $$PWD/../include/QMarkdown/extensions/abbr.h \
     $$PWD/../include/QMarkdown/extensions/admonition.h \
     $$PWD/../include/QMarkdown/extensions/def_list.h \
+    $$PWD/../include/QMarkdown/extensions/nl2br.h \
     $$PWD/../include/QMarkdown/BlockProcessors/CodeBlockProcessor.h \
     $$PWD/../include/QMarkdown/BlockProcessors/ListIndentProcessor.h \
     $$PWD/../include/QMarkdown/BlockProcessors/BlockQuoteProcessor.h \
@@ -95,6 +96,7 @@ SOURCES += \
     $$PWD/PreProcessors/HtmlBlockProcessor.cpp \
     $$PWD/PreProcessors/ReferencePreprocessor.cpp \
     $$PWD/TreeProcessors/InlineProcessor.cpp \
-    $$PWD/TreeProcessors/PrettifyTreeProcessor.cpp
+    $$PWD/TreeProcessors/PrettifyTreeProcessor.cpp \
+    $$PWD/extensions/nl2br.cpp
 
 INCLUDEPATH += $$PWD/../include/QMarkdown
