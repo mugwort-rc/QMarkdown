@@ -1,4 +1,4 @@
-#include "BacktickPattern.h"
+#include "InlinePatterns/BacktickPattern.h"
 
 namespace markdown
 {

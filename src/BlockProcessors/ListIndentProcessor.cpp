@@ -1,6 +1,6 @@
-#include "ListIndentProcessor.h"
+#include "BlockProcessors/ListIndentProcessor.h"
 
-#include "../BlockParser.h"
+#include "BlockParser.h"
 
 namespace markdown
 {

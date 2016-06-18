@@ -1,7 +1,7 @@
-#include "abbr.h"
+#include "extensions/abbr.h"
 
-#include "../Markdown.h"
-#include "../PreProcessors.h"
+#include "Markdown.h"
+#include "PreProcessors.h"
 
 namespace markdown
 {

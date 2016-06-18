@@ -5,17 +5,17 @@
  *      Author: mugwort_rc
  */
 
-#include "tables.h"
+#include "extensions/tables.h"
 
 #include <QString>
 #include <QStringList>
 
-#include "../Markdown.h"
-#include "../BlockParser.h"
-#include "../BlockProcessors.h"
+#include "Markdown.h"
+#include "BlockParser.h"
+#include "BlockProcessors.h"
 
-#include "../InlinePatterns/common.h"
-#include "../InlinePatterns/BacktickPattern.h"
+#include "InlinePatterns/common.h"
+#include "InlinePatterns/BacktickPattern.h"
 
 namespace markdown{
 

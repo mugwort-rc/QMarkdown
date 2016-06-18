@@ -1,10 +1,10 @@
-#include "def_list.h"
+#include "extensions/def_list.h"
 
-#include "../Markdown.h"
-#include "../BlockParser.h"
-#include "../BlockProcessors.h"
+#include "Markdown.h"
+#include "BlockParser.h"
+#include "BlockProcessors.h"
 
-#include "../BlockProcessors/ListIndentProcessor.h"
+#include "BlockProcessors/ListIndentProcessor.h"
 
 namespace markdown
 {

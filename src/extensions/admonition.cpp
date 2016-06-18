@@ -1,8 +1,8 @@
-#include "admonition.h"
+#include "extensions/admonition.h"
 
-#include "../Markdown.h"
-#include "../BlockParser.h"
-#include "../BlockProcessors.h"
+#include "Markdown.h"
+#include "BlockParser.h"
+#include "BlockProcessors.h"
 
 namespace markdown
 {

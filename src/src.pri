@@ -24,12 +24,35 @@ HEADERS += \
     $$PWD/../include/QMarkdown/ElementTree.hpp \
     $$PWD/../include/QMarkdown/pypp/xml/etree/elementtree.hpp \
     $$PWD/../include/QMarkdown/InlinePatterns/BacktickPattern.h \
+    $$PWD/../include/QMarkdown/InlinePatterns/SimpleTextPattern.h \
+    $$PWD/../include/QMarkdown/InlinePatterns/EscapePattern.h \
+    $$PWD/../include/QMarkdown/InlinePatterns/SimpleTagPattern.h \
+    $$PWD/../include/QMarkdown/InlinePatterns/HtmlPattern.h \
+    $$PWD/../include/QMarkdown/InlinePatterns/LinkPattern.h \
+    $$PWD/../include/QMarkdown/InlinePatterns/AutolinkPattern.h \
+    $$PWD/../include/QMarkdown/InlinePatterns/AutomailPattern.h \
     $$PWD/../include/QMarkdown/InlinePatterns/common.h \
     $$PWD/../include/QMarkdown/extensions/attr_list.h \
     $$PWD/../include/QMarkdown/extensions/abbr.h \
     $$PWD/../include/QMarkdown/extensions/admonition.h \
     $$PWD/../include/QMarkdown/extensions/def_list.h \
-    $$PWD/../include/QMarkdown/BlockProcessors/ListIndentProcessor.h
+    $$PWD/../include/QMarkdown/BlockProcessors/CodeBlockProcessor.h \
+    $$PWD/../include/QMarkdown/BlockProcessors/ListIndentProcessor.h \
+    $$PWD/../include/QMarkdown/BlockProcessors/BlockQuoteProcessor.h \
+    $$PWD/../include/QMarkdown/BlockProcessors/OListProcessor.h \
+    $$PWD/../include/QMarkdown/BlockProcessors/HashHeaderProcessor.h \
+    $$PWD/../include/QMarkdown/BlockProcessors/SetextHeaderProcessor.h \
+    $$PWD/../include/QMarkdown/BlockProcessors/HRProcessor.h \
+    $$PWD/../include/QMarkdown/BlockProcessors/EmptyBlockProcessor.h \
+    $$PWD/../include/QMarkdown/BlockProcessors/ParagraphProcessor.h \
+    $$PWD/../include/QMarkdown/PostProcessors/RawHtmlPostprocessor.h \
+    $$PWD/../include/QMarkdown/PostProcessors/AndSubstitutePostprocessor.h \
+    $$PWD/../include/QMarkdown/PostProcessors/UnescapePostprocessor.h \
+    $$PWD/../include/QMarkdown/PreProcessors/NormalizeWhitespace.h \
+    $$PWD/../include/QMarkdown/PreProcessors/HtmlBlockProcessor.h \
+    $$PWD/../include/QMarkdown/PreProcessors/ReferencePreprocessor.h \
+    $$PWD/../include/QMarkdown/TreeProcessors/InlineProcessor.h \
+    $$PWD/../include/QMarkdown/TreeProcessors/PrettifyTreeProcessor.h
 
 SOURCES += \
     $$PWD/BlockParser.cpp \
@@ -49,6 +72,29 @@ SOURCES += \
     $$PWD/extensions/abbr.cpp \
     $$PWD/extensions/admonition.cpp \
     $$PWD/extensions/def_list.cpp \
-    $$PWD/BlockProcessors/ListIndentProcessor.cpp
+    $$PWD/BlockProcessors/CodeBlockProcessor.cpp \
+    $$PWD/BlockProcessors/ListIndentProcessor.cpp \
+    $$PWD/BlockProcessors/BlockQuoteProcessor.cpp \
+    $$PWD/BlockProcessors/OListProcessor.cpp \
+    $$PWD/BlockProcessors/HashHeaderProcessor.cpp \
+    $$PWD/BlockProcessors/SetextHeaderProcessor.cpp \
+    $$PWD/BlockProcessors/HRProcessor.cpp \
+    $$PWD/BlockProcessors/EmptyBlockProcessor.cpp \
+    $$PWD/BlockProcessors/ParagraphProcessor.cpp \
+    $$PWD/InlinePatterns/SimpleTextPattern.cpp \
+    $$PWD/InlinePatterns/EscapePattern.cpp \
+    $$PWD/InlinePatterns/SimpleTagPattern.cpp \
+    $$PWD/InlinePatterns/HtmlPattern.cpp \
+    $$PWD/InlinePatterns/LinkPattern.cpp \
+    $$PWD/InlinePatterns/AutolinkPattern.cpp \
+    $$PWD/InlinePatterns/AutomailPattern.cpp \
+    $$PWD/PostProcessors/RawHtmlPostprocessor.cpp \
+    $$PWD/PostProcessors/AndSubstitutePostprocessor.cpp \
+    $$PWD/PostProcessors/UnescapePostprocessor.cpp \
+    $$PWD/PreProcessors/NormalizeWhitespace.cpp \
+    $$PWD/PreProcessors/HtmlBlockProcessor.cpp \
+    $$PWD/PreProcessors/ReferencePreprocessor.cpp \
+    $$PWD/TreeProcessors/InlineProcessor.cpp \
+    $$PWD/TreeProcessors/PrettifyTreeProcessor.cpp
 
 INCLUDEPATH += $$PWD/../include/QMarkdown

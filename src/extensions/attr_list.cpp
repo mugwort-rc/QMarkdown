@@ -1,10 +1,10 @@
-#include "attr_list.h"
+#include "extensions/attr_list.h"
 
-#include "../pypp/str.hpp"
+#include "pypp/str.hpp"
 
-#include "../Markdown.h"
-#include "../TreeProcessors.h"
-#include "../util.h"
+#include "Markdown.h"
+#include "TreeProcessors.h"
+#include "util.h"
 
 namespace markdown{
 

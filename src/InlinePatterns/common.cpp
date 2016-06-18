@@ -1,6 +1,6 @@
-#include "common.h"
+#include "InlinePatterns/common.h"
 
-#include "../pypp/re.hpp"
+#include "pypp/re.hpp"
 
 namespace markdown
 {
