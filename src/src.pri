@@ -1,35 +1,35 @@
 CONFIG += c++11
 
 HEADERS += \
-    $$PWD/BlockParser.h \
-    $$PWD/BlockProcessors.h \
-    $$PWD/InlinePatterns.h \
-    $$PWD/Markdown.h \
-    $$PWD/PostProcessors.h \
-    $$PWD/PreProcessors.h \
-    $$PWD/Serializers.h \
-    $$PWD/TreeProcessors.h \
-    $$PWD/htmlentitydefs.hpp \
-    $$PWD/util.h \
-    $$PWD/extensions/Extension.h \
-    $$PWD/extensions/tables.h \
-    $$PWD/pypp.hpp \
-    $$PWD/odict.hpp \
-    $$PWD/Processor.hpp \
-    $$PWD/pypp/str.hpp \
-    $$PWD/pypp/re.hpp \
-    $$PWD/pypp/builtin.hpp \
-    $$PWD/pypp/exceptions.hpp \
-    $$PWD/pypp/slice.hpp \
-    $$PWD/ElementTree.hpp \
-    $$PWD/pypp/xml/etree/elementtree.hpp \
-    $$PWD/InlinePatterns/BacktickPattern.h \
-    $$PWD/InlinePatterns/common.h \
-    $$PWD/extensions/attr_list.h \
-    $$PWD/extensions/abbr.h \
-    $$PWD/extensions/admonition.h \
-    $$PWD/extensions/def_list.h \
-    $$PWD/BlockProcessors/ListIndentProcessor.h
+    $$PWD/../include/QMarkdown/BlockParser.h \
+    $$PWD/../include/QMarkdown/BlockProcessors.h \
+    $$PWD/../include/QMarkdown/InlinePatterns.h \
+    $$PWD/../include/QMarkdown/Markdown.h \
+    $$PWD/../include/QMarkdown/PostProcessors.h \
+    $$PWD/../include/QMarkdown/PreProcessors.h \
+    $$PWD/../include/QMarkdown/Serializers.h \
+    $$PWD/../include/QMarkdown/TreeProcessors.h \
+    $$PWD/../include/QMarkdown/htmlentitydefs.hpp \
+    $$PWD/../include/QMarkdown/util.h \
+    $$PWD/../include/QMarkdown/extensions/Extension.h \
+    $$PWD/../include/QMarkdown/extensions/tables.h \
+    $$PWD/../include/QMarkdown/pypp.hpp \
+    $$PWD/../include/QMarkdown/odict.hpp \
+    $$PWD/../include/QMarkdown/Processor.hpp \
+    $$PWD/../include/QMarkdown/pypp/str.hpp \
+    $$PWD/../include/QMarkdown/pypp/re.hpp \
+    $$PWD/../include/QMarkdown/pypp/builtin.hpp \
+    $$PWD/../include/QMarkdown/pypp/exceptions.hpp \
+    $$PWD/../include/QMarkdown/pypp/slice.hpp \
+    $$PWD/../include/QMarkdown/ElementTree.hpp \
+    $$PWD/../include/QMarkdown/pypp/xml/etree/elementtree.hpp \
+    $$PWD/../include/QMarkdown/InlinePatterns/BacktickPattern.h \
+    $$PWD/../include/QMarkdown/InlinePatterns/common.h \
+    $$PWD/../include/QMarkdown/extensions/attr_list.h \
+    $$PWD/../include/QMarkdown/extensions/abbr.h \
+    $$PWD/../include/QMarkdown/extensions/admonition.h \
+    $$PWD/../include/QMarkdown/extensions/def_list.h \
+    $$PWD/../include/QMarkdown/BlockProcessors/ListIndentProcessor.h
 
 SOURCES += \
     $$PWD/BlockParser.cpp \
@@ -50,3 +50,5 @@ SOURCES += \
     $$PWD/extensions/admonition.cpp \
     $$PWD/extensions/def_list.cpp \
     $$PWD/BlockProcessors/ListIndentProcessor.cpp
+
+INCLUDEPATH += $$PWD/../include/QMarkdown

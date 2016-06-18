@@ -5,7 +5,7 @@
  *      Author: mugwort_rc
  */
 
-#include "Extension.h"
+#include "extensions/Extension.h"
 
 #include <QStringList>
 
